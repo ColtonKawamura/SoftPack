@@ -138,6 +138,42 @@ end
     @test pk2.contacts[1].normal == (Float32(1.0), Float32(0.0))
 end
 
+@testset "contacts.csv normal columns are nx ny nz" begin
+    # softpack-1 (docs/src/format.md) names the contact-normal columns nx, ny, nz.
+    # A round-trip alone cannot catch a wrong column name because the writer and the
+    # reader share it, so assert the exact on-disk header text for each dimension and
+    # for the frictional case, then confirm the file still round-trips.
+    hdr(path) = strip(first(readlines(joinpath(path, "contacts.csv"))))
+
+    pk3 = Packing{3,Float64}([1.0 2.0 0.5; 1.0 1.5 2.0; 0.1 0.2 0.3],
+                              [0.3, 0.25, 0.2], [4.0, 4.0, 4.0],
+                              Bool[false, false, false],
+                              [Contact(1, 3, 0.2, 1.0, nothing, (0.0, 0.0, 1.0))], _meta())
+    dir3 = mktempdir()
+    write_packing(pk3, dir3)
+    @test hdr(dir3) == "i, j, overlap, fn, nx, ny, nz"
+
+    pk2 = Packing{2,Float64}([1.0 2.0; 1.0 1.0], [0.3, 0.25], [4.0, 4.0],
+                             Bool[false, false],
+                             [Contact(1, 2, 0.1, 0.5, nothing, (1.0, 0.0))], _meta())
+    dir2 = mktempdir()
+    write_packing(pk2, dir2)
+    @test hdr(dir2) == "i, j, overlap, fn, nx, ny"
+
+    pkf = Packing{3,Float64}([1.0 2.0 0.5; 1.0 1.5 2.0; 0.1 0.2 0.3],
+                             [0.3, 0.25, 0.2], [4.0, 4.0, 4.0],
+                             Bool[false, false, false],
+                             [Contact(1, 3, 0.2, 1.0, 0.3, (0.0, 0.0, 1.0))],
+                             _meta(friction = :coulomb))
+    dirf = mktempdir()
+    write_packing(pkf, dirf)
+    @test hdr(dirf) == "i, j, overlap, fn, ft, nx, ny, nz"
+
+    # The file still round-trips to the same contact normal after renaming.
+    pk3b = read_packing(dir3)
+    @test pk3b.contacts[1].normal == (0.0, 0.0, 1.0)
+end
+
 @testset "IO missing files throw" begin
     dir = mktempdir()
     @test_throws ArgumentError read_packing(dir)   # no files present

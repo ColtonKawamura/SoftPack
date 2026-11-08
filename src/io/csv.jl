@@ -11,6 +11,8 @@
 
 # Coordinate column names: 1 -> x, 2 -> y, 3 -> z.
 const _COORD_NAMES = ("x", "y", "z")
+# Contact-normal column names (softpack-1): nx, ny, nz.
+const _NORMAL_NAMES = ("nx", "ny", "nz")
 
 # Digits that round-trip a floating-point value exactly when parsed back:
 # 17 for Float64, 9 for Float32.
@@ -55,7 +57,7 @@ function write_contacts_csv(io, ::Val{D}, contacts, has_friction) where {D}
     @printf(io, "i, j, overlap, fn")
     has_friction && @printf(io, ", ft")
     for d in 1:D
-        @printf(io, ", %s", _COORD_NAMES[d])
+        @printf(io, ", %s", _NORMAL_NAMES[d])
     end
     @printf(io, "\n")
     for c in contacts
@@ -109,7 +111,7 @@ function parse_contacts_csv(path)
     isempty(lines) && throw(ArgumentError("empty file: $path"))
     header = [strip(h) for h in split(lines[1], ',')]
     has_ft = "ft" in header
-    D = count(in(_COORD_NAMES), header)
+    D = count(name -> name in _NORMAL_NAMES, header)
     nrows = length(lines) - 1
     contacts = Vector{Contact{D,Float64}}(undef, nrows)
     for r in 1:nrows
