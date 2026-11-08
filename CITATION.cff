@@ -1,0 +1,16 @@
+citation-type: software
+title: SoftPack
+abstract: >-
+  Julia package for generating reproducible, self-describing jammed packings of
+  soft particles for granular and soft-matter (DEM) research.
+authors:
+  - family-names: Kawamura
+    given-names: Colton
+    orcid: https://orcid.org/0000-0000-0000-0000
+container-title: SoftPack
+license: MIT
+repository-code: https://github.com/ColtonKawamura/SoftPack
+type: software
+URL: https://github.com/ColtonKawamura/SoftPack
+version: 0.1.0-DEV
+issued: 2026-11-08

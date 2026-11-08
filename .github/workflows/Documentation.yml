@@ -1,0 +1,35 @@
+name: Documentation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags: '*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: '1'
+      - name: Instantiate the docs environment
+        run: julia --project=docs -e 'using Pkg; Pkg.develop(path = "."); Pkg.instantiate()'
+      - name: Build documentation site
+        run: julia --project=docs docs/make.jl
+      - name: Deploy to GitHub Pages
+        # Build on every trigger; deploy only when pushing to main (i.e. never on PRs).
+        if: github.event_name == 'push'
+        env:
+          DOCS_DEPLOY: 'true'
+        run: julia --project=docs docs/make.jl
