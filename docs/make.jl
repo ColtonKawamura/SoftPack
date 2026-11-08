@@ -1,8 +1,9 @@
 using SoftPack
 using Documenter
 
-# SoftPack documentation. The pages below are placeholders for M0; their content
-# is filled in by later cards (the docs card). This file must keep building.
+# SoftPack documentation. M0 pages: the landing page (index.md), the public
+# API (api.md, from the docstrings in src/), the softpack-1 format
+# specification (format.md) and the developer guide (developer.md).
 meta = Dict(
     "authors"       => ["Colton Kawamura"],
     "maintainers"   => ["Colton Kawamura"],
@@ -22,14 +23,11 @@ makedocs(
     ),
     pages = [
         "Home"             => "index.md",
+        "API reference"    => "api.md",
         "Format specification" => "format.md",
         "Developer guide"  => "developer.md",
     ],
 )
-
-# API documentation (from docstrings in src/) is added by the docs card. It is left
-# out now so the skeleton builds without requiring every exported symbol to be
-# documented.
 
 # Only deploy the built site to GitHub Pages when explicitly asked (the CI
 # Documentation workflow sets DOCS_DEPLOY=true on push to main). A plain local
