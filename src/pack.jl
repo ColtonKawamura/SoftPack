@@ -29,9 +29,10 @@ function pack(::Val{alg}, p::PackParams) where {alg}
 end
 
 """
-    pack(; kwargs...) -> PackParams
+    pack(; kwargs...) -> Packing
 
-Convenience constructor: build a `PackParams` from keyword arguments and pack it.
-Example:  pack(N = 64, pressure = 1e-3).
+Convenience form: build a `PackParams` from the keyword arguments and pack it.
+Example: `pack(N = 64, pressure = 1e-3)`. As with `pack(p)`, in v0.1 this
+always throws the "not implemented yet" error.
 """
 pack(; kwargs...) = pack(PackParams(; kwargs...))
