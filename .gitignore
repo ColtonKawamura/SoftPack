@@ -1,0 +1,18 @@
+# Julia: the package manifest is not committed for a library package
+Manifest.toml
+Manifest-v*.toml
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+/docs/build/
+/docs/Manifest*.toml
+
+# Worktrees used for parallel branches live inside the repo but are not tracked
+/.worktrees/
+
+# Generated packings and scratch output
+/out/
+/junkyard/
+
+# OS files
+.DS_Store
