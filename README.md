@@ -5,7 +5,25 @@ granular and soft-matter simulations. The goal is one well-documented, reproduci
 place to make packings, so that packings used across studies are built the same way
 and described by the same metadata.
 
-Planned features:
+## Quick Start
+
+Install Julia (via [juliaup](https://juliaup.dev)) and the dependencies:
+
+```sh
+sh install.sh
+```
+
+Then run a packing:
+
+```julia
+using SoftPack
+p = PackParams()
+p.force_threshold = 1e-12
+pk = pack(p)          # not implemented in v0.1; returns a Packing in later milestones
+write_packing(pk, "./packing")
+```
+
+## Planned features:
 
 - The main packing algorithms from the literature (FIRE compression to a target
   pressure, damped molecular dynamics with pressure control, Lubachevsky–Stillinger,
