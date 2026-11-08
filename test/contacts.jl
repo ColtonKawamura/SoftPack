@@ -93,7 +93,7 @@ using StableRNGs
         _, contacts = compute_forces!(zeros(2, M * M), x, radii, box, pairs, Hookean(k))
         delta = 2r - a
         fn = k * delta
-        @test length(contacts) == 2 * M * M      # each particle has 4 neighbours
+        @test length(contacts) == 2 * M * M      # each particle has 4 neighbors
         # Analytic virial pressure: (1/(V D)) sum fn * dist, dist = a per contact.
         P_analytic = (length(contacts) * fn * a) / (a * M * a * M * 2)
         @test virial_pressure(contacts, x, box) ≈ P_analytic rtol = 1e-9

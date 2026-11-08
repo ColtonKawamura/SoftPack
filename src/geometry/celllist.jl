@@ -4,7 +4,7 @@
 #  Particles are bucketed into an nx grid of cells (each side >= `cellsize`).
 #  Candidate contacts are the particles in the 3^D periodic stencil around each
 #  particle's cell. A pair (i, j) with i < j is emitted when its minimum-image
-#  centre-to-centre distance is < r_i + r_j + skin. With skin = 0 that is exactly
+#  center-to-center distance is < r_i + r_j + skin. With skin = 0 that is exactly
 #  the contact set (delta > 0), and it matches a brute-force scan pair-for-pair.
 #
 #  Correctness at low cell counts: when any axis has fewer than 3 cells the
@@ -35,7 +35,7 @@ struct CellList{D,T}
     ncells::Int
     cell_of::Vector{Int}                 # length N: linear cell index of each particle
     cell_particles::Vector{Vector{Int}}  # length ncells: particle ids per cell
-    neighbors::Vector{Vector{Int}}       # length ncells: neighbour cell ids (3^D stencil)
+    neighbors::Vector{Vector{Int}}       # length ncells: neighbor cell ids (3^D stencil)
 end
 
 """

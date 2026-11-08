@@ -3,8 +3,8 @@
 #  for a target packing fraction.
 #
 #  Length unit. All lengths in this module are expressed in units of the smallest
-#  particle diameter (so the smallest particle has diameter 1 in these units).
-#  This is an internal engine convention for M1; a later milestone may normalise
+#  particle radius (so the smallest particle has radius 1 in these units).
+#  This is an internal engine convention for M1; a later milestone may normalize
 #  the softpack-1 output to the mean radius instead.
 # ---------------------------------------------------------------------------
 
