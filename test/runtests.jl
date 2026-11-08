@@ -7,4 +7,8 @@ using Test
     include("params.jl")
     include("pack.jl")
     include("io.jl")
+    include("geometry.jl")
+    include("distributions.jl")
+    include("celllist.jl")
+    include("contacts.jl")
 end
