@@ -21,16 +21,16 @@ the reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
 | Setting | Default | Other choices | § |
 |---|---|---|---|
 | `dimension` | `2` | `3` | 2 |
-| `particles` | `256` | any number ≥ 2 | 2 |
-| `sizes` | `Bidisperse(small_diameter = 1.0, diameter_ratio = 1.4, small_fraction = 0.5)` | `UniformPolydisperse(mean_diameter = 1.0, spread = 0.2)`, `Monodisperse(diameter = 1.0)`, `CustomDiameters(diameters)` | 2, 3 |
+| `particles_count` | `256` | any number ≥ 2 | 2 |
+| `sizes` | `Bidisperse(diameter_small = 1.0, diameter_ratio = 1.4, fraction_small = 0.5)` | `UniformPolydisperse(diameter_mean = 1.0, spread = 0.2)`, `Monodisperse(diameter = 1.0)`, `CustomDiameters(diameters)` | 2, 3 |
 | `contact` | `Hookean(stiffness = 1.0)` | `Hertzian(stiffness = 1.0)` | 2 |
 | `friction` | `nothing` (frictionless) | `CundallStrack(friction_coefficient = 0.5, stiffness_ratio = :matched)`, `Mindlin(friction_coefficient = 0.5, poisson_ratio = 0.0)` | 2, 13 |
 | `mass` | `EqualMass(1.0)` | `Density(1.0; shape = :disc)` (`:sphere` in 3D) | 4 |
 | `target` | `Pressure(1e-4)` | | 2 |
 | `convergence` | `RelativeForce(tolerance = 1e-8)` | `LeidenAcceleration(tolerance = 1e-10)`, `KineticEnergy(tolerance = 1e-8)`, `RestartTest()`, any function | 5 |
 | `pressure_tolerance` | `1e-4` | any value | 5 |
-| `max_steps` | `10^7` | any value | 5 |
-| `on_failure` | `:warn` | `:error` | 6 |
+| `steps_max` | `10^7` | any value | 5 |
+| `failure_action` | `:warn` | `:error` | 6 |
 | `algorithm` | `FIRE()` | `DampedDynamics()` | 7, 14 |
 | `timestep` | `CollisionTime(fraction = 1/50)` | any fraction, or a fixed number | 12 |
 | `DampedDynamics` `damping` | `ContactDamping(normal = 0.98, tangential = 0.98)` | other ratios, `ViscousRate(normal = 0.5, tangential = 0.5)`, `nothing` | 8 |
@@ -40,20 +40,23 @@ the reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
 | `rattlers` | `ContactCount(cone_test = true)` | `TwoContact()`, `ForceFloor(floor = 1e-3)`, `Unresolved(floor = :tolerance)`, `nothing`, any function | 9 |
 | `seed` | `1` | any integer | 10 |
 | file format | HDF5 | CSV | 11 |
-| `with_rattlers` | `false` | `true` | 11 |
+| `rattlers_file` | `false` | `true` | 11 |
 | `compression` | `nothing` | `:gzip` (level 4) | 11 |
 | `snapshots`, `movie` | `nothing` | `Snapshots(every = interval)`, `Movie(path; every = interval)` | 11 |
 
 ## 1. Interface and naming
 
 **Decision.** `pack()` runs with no arguments. Settings are keywords
-(`pack(; particles = 2000, target = Pressure(1e-4))`) or a reusable `PackParams` value
+(`pack(; particles_count = 2000, target = Pressure(1e-4))`) or a reusable `PackParams` value
 (`pack(params)`). Any setting with its own sub-settings is a small type (`Pressure`,
 `FIRE`, `CundallStrack`, ...) so algorithms, force laws and rules can be swapped by
 dispatch. Names follow the Julia style guide: CamelCase types, snake_case functions
 and keywords, `!` for functions that mutate an argument. Keywords are full English
 words, never a symbol from one paper's notation or an abbreviation:
-`friction_coefficient`, not `mu` or `friction_coeff`.
+`friction_coefficient`, not `mu` or `friction_coeff`. Multi-word keywords read like
+`Object.member`, the thing first and then its property: `friction_coefficient`
+(friction.coefficient), `particles_count`, `timestep_max`. Functions keep verb-first
+names (`find_rattlers`, `write_packing`).
 
 - [JuliaStyle] "modules and type names use capitalization and camel case"
 - [JuliaStyle] "Function names should be written in snake case"
@@ -65,10 +68,15 @@ words, never a symbol from one paper's notation or an abbreviation:
   that we include sliding friction between the particles", where [Silbert2001] write
   k_t and γ_t for the same springs and dashpots; LAMMPS calls the friction coefficient
   `xmu` [LAMMPSgran]. **SoftPack choice.**
+- Object-then-property order: **SoftPack choice**, so a keyword reads like a struct
+  field (`timestep_max` as timestep.max) and related settings sit together
+  (`timestep_max`, `timestep_min`, `timestep_grow`, `timestep_shrink`). Function names
+  follow the style guide's verb-first examples: [JuliaStyle] "Function names should
+  be written in snake case (minimum, count_zeros, escape_string)."
 
 ## 2. Default packing
 
-**Decision.** 2D, `particles = 256`, 50:50 bidisperse with diameter ratio 1.4, frictionless
+**Decision.** 2D, `particles_count = 256`, 50:50 bidisperse with diameter ratio 1.4, frictionless
 Hookean contacts with `stiffness = 1`, target pressure `1e-4`, FIRE.
 
 - 50:50 bidisperse, ratio 1.4: [OHern2003] "In our two-dimensional (2D) simulations,
@@ -76,10 +84,10 @@ Hookean contacts with `stiffness = 1`, target pressure `1e-4`, FIRE.
   prevent crystallization".
 - 2D: **SoftPack choice.** 2D packings are the cheapest to make and to check by eye,
   and the bidisperse mixture above is the standard 2D one. `dimension = 3` is an option.
-- `particles = 256`: **SoftPack choice.** Small enough that `pack()` with no arguments
+- `particles_count = 256`: **SoftPack choice.** Small enough that `pack()` with no arguments
   finishes in seconds, and inside the range of jamming studies: [OHern2003] "We
   have studied the finite-size effects by varying the number of particles in the
-  sample between 4 < N < 4096 in 2D and 3D." Production runs should set `particles`.
+  sample between 4 < N < 4096 in 2D and 3D." Production runs should set `particles_count`.
 - Hookean contacts: [OHern2003] study both "α = 2 for repulsive harmonic springs"
   and "α = 5/2 for repulsive Hertzian interactions". Hookean is the default
   (**SoftPack choice**) because its stiffness does not change with overlap, so the
@@ -101,15 +109,15 @@ Hookean contacts with `stiffness = 1`, target pressure `1e-4`, FIRE.
 ## 3. Sizes and length unit
 
 **Decision.** Sizes are diameters everywhere. Each size distribution sets its own
-unit in its defaults: `Bidisperse(small_diameter = 1.0, ...)` makes the small diameter 1
+unit in its defaults: `Bidisperse(diameter_small = 1.0, ...)` makes the small diameter 1
 (the jamming convention); polydisperse distributions default to mean diameter 1
 (the Leiden convention). Files store the actual diameters.
 
 Built-in distributions and their defaults:
-- `Bidisperse(small_diameter = 1.0, diameter_ratio = 1.4, small_fraction = 0.5)`, `small_fraction` being the number
+- `Bidisperse(diameter_small = 1.0, diameter_ratio = 1.4, fraction_small = 0.5)`, `fraction_small` being the number
   fraction of small particles (the default packing, §2).
-- `UniformPolydisperse(mean_diameter = 1.0, spread = 0.2)`: diameters uniform between
-  mean_diameter × (1 − spread) and mean_diameter × (1 + spread).
+- `UniformPolydisperse(diameter_mean = 1.0, spread = 0.2)`: diameters uniform between
+  diameter_mean × (1 − spread) and diameter_mean × (1 + spread).
 - `Monodisperse(diameter = 1.0)`.
 - `CustomDiameters(diameters)`: any list of diameters.
 
@@ -151,7 +159,7 @@ masses.
 and frictional packings: the largest net force on any particle (and the largest net
 torque when friction is on) must be below `tolerance` times the mean contact force. The
 pressure must also be within `pressure_tolerance = 1e-4` (relative) of the target, and a
-run stops after `max_steps = 10^7` steps at most. Options: `LeidenAcceleration(tolerance =
+run stops after `steps_max = 10^7` steps at most. Options: `LeidenAcceleration(tolerance =
 1e-10)`, `KineticEnergy(tolerance = 1e-8)`, `RestartTest()`, or any function of the
 packing state that returns true when done. The default `tolerance = 1e-8` is provisional
 (**SoftPack choice**, to be timed on frictional packings).
@@ -178,7 +186,7 @@ packing state that returns true when done. The default `tolerance = 1e-8` is pro
 - `pressure_tolerance = 1e-4`: the [Agnolin2007] value above (stress equal to P "with
   relative error smaller than 10^-4"). [Gilabert2007] use the same 10^-4 level for
   the pressure, scaled by their typical force F_1.
-- `max_steps = 10^7`: **SoftPack choice.** A safety cap, not a convergence test: a run
+- `steps_max = 10^7`: **SoftPack choice.** A safety cap, not a convergence test: a run
   that hits it is returned with `converged = false` (§6). The value is twice the
   5 × 10^6 cap of GranEJulia's packer, which SoftPack replaces and which stops at a
   looser force tolerance (10^-4 against 10^-8 here).
@@ -190,7 +198,7 @@ packing state that returns true when done. The default `tolerance = 1e-8` is pro
 choice**: never discard or silently save an unfinished packing; let the caller see
 and count failures (replacing failures conditions an ensemble on convergence).
 
-Option: `on_failure = :error` throws an error instead (default `:warn`), for batch
+Option: `failure_action = :error` throws an error instead (default `:warn`), for batch
 scripts that should stop at the first failure. **SoftPack choice.**
 
 ## 7. Algorithms and combinations
@@ -500,7 +508,7 @@ Three rules follow from the sources:
   that Blosc-compressed datasets cannot be read by "vanilla HDF5 distributions".
 
 **Rattlers in the output.** When a rattler rule is applied (the default), the main
-file holds only the remaining particles, with their original ids. `with_rattlers =
+file holds only the remaining particles, with their original ids. `rattlers_file =
 true` also writes a second file with every particle and a rattler flag (default
 `false`). With `rattlers = nothing` there is one file with every particle.
 **SoftPack choice**.
@@ -595,25 +603,26 @@ is from [Bitzek2006].
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `max_timestep` | `10` | largest step, in units of the starting step (§12) |
-| `min_timestep` | `0.02` | smallest step, same units |
+| `timestep_max` | `10` | largest step, in units of the starting step (§12) |
+| `timestep_min` | `0.02` | smallest step, same units |
 | `delay` | `20` | steps to wait after an uphill move before the step may grow |
 | `timestep_grow` | `1.1` | factor by which the step grows |
 | `timestep_shrink` | `0.5` | factor by which the step shrinks after an uphill move |
-| `mixing` | `0.25` | starting coefficient for mixing the velocity and force directions |
+| `mixing_coefficient` | `0.25` | starting coefficient for mixing the velocity and force directions |
 | `mixing_shrink` | `0.99` | factor by which that coefficient shrinks |
-| `max_uphill` | `2000` | consecutive uphill moves before the run stops |
-| `half_step_back` | `true` | move back half a step after an uphill move |
-| `initial_delay` | `true` | apply the delay at the start of the run too |
+| `uphill_max` | `2000` | consecutive uphill moves before the run stops |
+| `inertia_correction` | `true` | move back half a step after an uphill move (LAMMPS `halfstepback`) |
+| `delay_initial` | `true` | apply the delay at the start of the run too |
 | `integrator` | `:semi_implicit_euler` | `:velocity_verlet` is the option |
 | `damping`, `drag` | `nothing` | see §8 |
 
 - All values except `damping` and `drag`: [Guenole2020] Table 1 (LAMMPS `min_modify`
-  defaults for FIRE 2.0).
+  defaults for FIRE 2.0). `inertia_correction` is their name for the half step back:
+  LAMMPS `halfstepback`, "yes activates the inertia correction" [Guenole2020].
 - `integrator = :semi_implicit_euler`: [Guenole2020] "Hence we recommend the usage of
   FIRE 2.0 with an Euler Implicit integrator." (Their Euler implicit is the
   semi-implicit, or symplectic, Euler scheme.) Velocity Verlet is also suitable:
   [Guenole2020] "Symplectic schemes like Euler semi-implicit (also called symplectic
   Euler), Leapfrog or Velocity Verlet are more robust against varying timesteps".
-- A run that reaches `max_uphill` is returned with `converged = false` (§6), where
+- A run that reaches `uphill_max` is returned with `converged = false` (§6), where
   LAMMPS ends the minimization. **SoftPack choice**, to match §6.
