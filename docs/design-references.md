@@ -38,6 +38,7 @@ reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
 | `steps_max` | `10^7` | any value | 5 |
 | `failure_action` | `:warn` | `:error` | 6 |
 | `restart_packing` | `nothing` | path to a file written by `write_packing` | 6 |
+| `restart_file` | `nothing` | `RestartFile(path; every = interval)` | 6 |
 | `algorithm` | `FIRE()` | `DampedDynamics()` | 7, 14 |
 | `timestep` | `CollisionTime(fraction = 1/50)` | any fraction, or a fixed number | 12 |
 | `DampedDynamics` `damping` | `ContactDamping(normal = 0.98, tangential = 0.98)` | other ratios, `ViscousRate(normal = 0.5, tangential = 0.5)`, `nothing` | 8 |
@@ -441,7 +442,8 @@ the unbalanced forces do not grow back. It has no settings.
 ## 6. A packing that does not converge
 
 `pack()` never throws away or silently saves an unfinished packing. It returns it
-flagged, and the run can be continued later from a file.
+flagged, and the run can be continued later from a file. Long runs can also save
+their state as they go, so a job stopped by a time limit or a crash can be continued.
 
 ```julia
 pack(failure_action = :warn)
@@ -496,12 +498,51 @@ packing = pack(restart_packing = "packing.h5")  # continues where it stopped
   restarts due to round-off effects, in which case the trajectories in the 2 runs will
   slowly diverge."
 - Only run-control settings may change on a restart: `steps_max` (a new budget,
-  counted from the restart), `failure_action`, `convergence`, `snapshots` and `movie`,
-  e.g. `pack(restart_packing = "packing.h5", steps_max = 2 * 10^7)`. Any other keyword
+  counted from the restart), `failure_action`, `convergence`, `restart_file`,
+  `snapshots` and `movie`, e.g. `pack(restart_packing = "packing.h5", steps_max = 2 * 10^7)`. Any other keyword
   raises an error, because it would change the protocol halfway through and the
   packing would match neither setting. **SoftPack choice.**
 - A converged packing can be restarted too, for example with a tighter `convergence`
   tolerance. The output records each restart (file and step).
+
+```julia
+pack(restart_file = nothing)
+```
+
+**Decision.** Off by default. `restart_file = RestartFile(path; every = interval)`
+saves the run's full state to `path` while it runs, in the same format that
+`restart_packing` reads. `every` is a number of steps (`every = 10^5`) or a
+wall-clock time (`every = Hour(1)`, from Julia's Dates). For a cluster job with a time
+limit:
+
+```julia
+# job 1: stopped by the time limit
+pack(particles_count = 10^5, restart_file = RestartFile("restart.h5"; every = Hour(1)))
+# job 2: continues from the last save
+pack(restart_packing = "restart.h5")
+```
+
+- Precedent and default: [LAMMPSrestart] "Write out a binary restart file with the
+  current state of the simulation on timesteps which are a multiple of N. A value of
+  N = 0 means do not write out any restart files, which is the default." Off by default
+  also because short runs do not need it and each save costs time and disk.
+- `every` has **no default** and must be given: the right interval depends on how long
+  the run is and on the job's time limit. **SoftPack choice**, as for `Snapshots`.
+- A wall-clock interval: **SoftPack choice**. Cluster limits are in wall-clock time, so
+  a time interval bounds the work lost when a job is killed (at most `every`) for any
+  system size. Saving does not change the trajectory, so the packing is the same
+  whether or not, and how often, it is saved.
+- One file, never half-written: each save goes to a temporary file that is then
+  renamed over `path`, so a job killed in the middle of a save still leaves the last
+  complete file. LAMMPS gets the same safety by alternating between two files:
+  [LAMMPSrestart] "If two filenames are specified, only 2 restart files will be
+  created, with those names. LAMMPS will toggle between the 2 names as it writes
+  successive restart files." The rename keeps one name that is always valid.
+  **SoftPack choice.**
+- The file is also written when the run stops, converged or not, so the last state is
+  always on disk without a separate `write_packing` call. **SoftPack choice.**
+- `restart_file` is a run-control setting (see `restart_packing` above): a continued
+  run keeps saving to the same file unless a new `restart_file` is given.
 
 ## 7. Algorithms and combinations
 
