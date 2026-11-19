@@ -1,47 +1,101 @@
 # SoftPack design decisions and their references
 
 Every design decision for SoftPack's `pack()`, with the sources behind it. Quotes are
-copied from the papers' full texts (arXiv versions); BibTeX for every key is in
-[`references.bib`](references.bib). Decisions marked **SoftPack choice** have no
-literature source: they are our own call, and the reason is given.
+copied from the sources' full texts: the published versions for [OHern2003],
+[Shundyak2007], [Somfai2007] and [Henkes2010], the arXiv versions or official docs
+for the rest. BibTeX for every key is in [`references.bib`](references.bib).
+Decisions marked **SoftPack choice** have no literature source: they are our own
+call, and the reason is given.
 
-Status: design stage (no engine code yet). Last updated 2026-11-18.
-The 1/50 time-step default (§12), HDF5-default / CSV-option formats (§11) and the
-damping defaults (§8) are settled.
+Status: design stage (no engine code yet). Last updated 2026-11-18. Every setting has
+a default and a reason (§0). Not designed yet: how `pack()` reaches the target
+pressure (initial state and compression protocol).
 
 ---
+
+## 0. Every default at a glance
+
+Every setting of `pack()`, its default, the other choices, and the section that gives
+the reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
+
+| Setting | Default | Other choices | § |
+|---|---|---|---|
+| `dimension` | `2` | `3` | 2 |
+| `particles_count` | `256` | any number ≥ 2 | 2 |
+| `sizes` | `Bidisperse(diameter_small = 1.0, diameter_ratio = 1.4, fraction_small = 0.5)` | `UniformPolydisperse(diameter_mean = 1.0, spread = 0.2)`, `Monodisperse(diameter = 1.0)`, `CustomDiameters(diameters)` | 2, 3 |
+| `contact` | `Hookean(stiffness = 1.0)` | `Hertzian(stiffness = 1.0)` | 2 |
+| `friction` | `nothing` (frictionless) | `CundallStrack(friction_coefficient = 0.5, stiffness_ratio = :matched)`, `Mindlin(friction_coefficient = 0.5, poisson_ratio = 0.0)` | 2, 13 |
+| `mass` | `EqualMass(1.0)` | `Density(1.0; shape = :disc)` (`:sphere` in 3D) | 4 |
+| `target` | `Pressure(1e-4)` | | 2 |
+| `convergence` | `RelativeForce(tolerance = 1e-8)` | `LeidenAcceleration(tolerance = 1e-10)`, `KineticEnergy(tolerance = 1e-8)`, `RestartTest()`, any function | 5 |
+| `pressure_tolerance` | `1e-4` | any value | 5 |
+| `steps_max` | `10^7` | any value | 5 |
+| `failure_action` | `:warn` | `:error` | 6 |
+| `algorithm` | `FIRE()` | `DampedDynamics()` | 7, 14 |
+| `timestep` | `CollisionTime(fraction = 1/50)` | any fraction, or a fixed number | 12 |
+| `DampedDynamics` `damping` | `ContactDamping(normal = 0.98, tangential = 0.98)` | other ratios, `ViscousRate(normal = 0.5, tangential = 0.5)`, `nothing` | 8 |
+| `DampedDynamics` `drag` | `nothing` | `StokesDrag(velocity = rate)`, with `spin` and `during` | 8 |
+| `FIRE` `damping`, `drag` | `nothing`, `nothing` | same as `DampedDynamics` | 8 |
+| FIRE parameters | LAMMPS FIRE 2.0 defaults | any value | 14 |
+| `rattlers` | `ContactCount(cone_test = true)` | `TwoContact()`, `ForceFloor(floor = 1e-3)`, `Unresolved(floor = :tolerance)`, `nothing`, any function | 9 |
+| `seed` | `1` | any integer | 10 |
+| file format | HDF5 | CSV | 11 |
+| `rattlers_file` | `false` | `true` | 11 |
+| `compression` | `nothing` | `:gzip` (level 4) | 11 |
+| `snapshots`, `movie` | `nothing` | `Snapshots(every = interval)`, `Movie(path; every = interval)` | 11 |
 
 ## 1. Interface and naming
 
 **Decision.** `pack()` runs with no arguments. Settings are keywords
-(`pack(; n = 2000, target = Pressure(1e-4))`) or a reusable `PackParams` value
+(`pack(; particles_count = 2000, target = Pressure(1e-4))`) or a reusable `PackParams` value
 (`pack(params)`). Any setting with its own sub-settings is a small type (`Pressure`,
 `FIRE`, `CundallStrack`, ...) so algorithms, force laws and rules can be swapped by
 dispatch. Names follow the Julia style guide: CamelCase types, snake_case functions
-and keywords, `!` for functions that mutate an argument.
+and keywords, `!` for functions that mutate an argument. Keywords are full English
+words, never a symbol from one paper's notation or an abbreviation:
+`friction_coefficient`, not `mu` or `friction_coeff`. Multi-word keywords read like
+`Object.member`, the thing first and then its property: `friction_coefficient`
+(friction.coefficient), `particles_count`, `timestep_max`. Functions keep verb-first
+names (`find_rattlers`, `write_packing`).
 
 - [JuliaStyle] "modules and type names use capitalization and camel case"
 - [JuliaStyle] "Function names should be written in snake case"
+- No abbreviations: [JuliaStyle] "conciseness is valued, but avoid abbreviation
+  (indexin rather than indxin) as it becomes difficult to remember whether and how
+  particular words are abbreviated." (coef or coeff?)
+- No notation symbols, because papers name the same quantity differently.
+  [Santos2024] "the tangential forces are referred to by the letter 's' to indicate
+  that we include sliding friction between the particles", where [Silbert2001] write
+  k_t and γ_t for the same springs and dashpots; LAMMPS calls the friction coefficient
+  `xmu` [LAMMPSgran]. **SoftPack choice.**
+- Object-then-property order: **SoftPack choice**, so a keyword reads like a struct
+  field (`timestep_max` as timestep.max) and related settings sit together
+  (`timestep_max`, `timestep_min`, `timestep_grow`, `timestep_shrink`). Function names
+  follow the style guide's verb-first examples: [JuliaStyle] "Function names should
+  be written in snake case (minimum, count_zeros, escape_string)."
 
 ## 2. Default packing
 
-**Decision.** 2D, `n = 256`, 50:50 bidisperse with diameter ratio 1.4, frictionless
-Hookean contacts, target pressure `1e-4`, FIRE.
+**Decision.** 2D, `particles_count = 256`, 50:50 bidisperse with diameter ratio 1.4, frictionless
+Hookean contacts with `stiffness = 1`, target pressure `1e-4`, FIRE.
 
-- 50:50 bidisperse, ratio 1.4: [OHern2003] "In our two-dimensional (2d) simulations
+- 50:50 bidisperse, ratio 1.4: [OHern2003] "In our two-dimensional (2D) simulations,
   we have used 50-50 mixtures of particles with a size ratio of 1.4 in order to
-  prevent crystallization."
+  prevent crystallization".
 - 2D: **SoftPack choice.** 2D packings are the cheapest to make and to check by eye,
-  and the bidisperse mixture above is the standard 2D one. `dim = 3` is an option.
-- `n = 256`: **SoftPack choice.** Small enough that `pack()` with no arguments
+  and the bidisperse mixture above is the standard 2D one. `dimension = 3` is an option.
+- `particles_count = 256`: **SoftPack choice.** Small enough that `pack()` with no arguments
   finishes in seconds, and inside the range of jamming studies: [OHern2003] "We
   have studied the finite-size effects by varying the number of particles in the
-  sample between 4 < N < 4096 in 2d and 3d." Production runs should set `n`.
+  sample between 4 < N < 4096 in 2D and 3D." Production runs should set `particles_count`.
 - Hookean contacts: [OHern2003] study both "α = 2 for repulsive harmonic springs"
   and "α = 5/2 for repulsive Hertzian interactions". Hookean is the default
   (**SoftPack choice**) because its stiffness does not change with overlap, so the
   collision time, time step and damping ratio are fixed for the whole run.
   `Hertzian` is an option.
+- `stiffness = 1`: **SoftPack choice.** Sets the force unit. For Hookean contacts the
+  pressure `1e-4` then means P = 10^-4 k in 2D and P = 10^-4 k/d in 3D (k the stiffness,
+  d the small diameter).
 - Pressure `1e-4`: **SoftPack choice**, near jamming but high enough to converge
   quickly. Frictional jamming studies span pressures from 10^-6 to 10^-3
   [Henkes2010] (Hertz-Mindlin grains, so their pressure unit differs from ours).
@@ -55,38 +109,60 @@ Hookean contacts, target pressure `1e-4`, FIRE.
 ## 3. Sizes and length unit
 
 **Decision.** Sizes are diameters everywhere. Each size distribution sets its own
-unit in its defaults: `Bidisperse(small = 1.0, ...)` makes the small diameter 1
+unit in its defaults: `Bidisperse(diameter_small = 1.0, ...)` makes the small diameter 1
 (the jamming convention); polydisperse distributions default to mean diameter 1
 (the Leiden convention). Files store the actual diameters.
+
+Built-in distributions and their defaults:
+- `Bidisperse(diameter_small = 1.0, diameter_ratio = 1.4, fraction_small = 0.5)`, `fraction_small` being the number
+  fraction of small particles (the default packing, §2).
+- `UniformPolydisperse(diameter_mean = 1.0, spread = 0.2)`: diameters uniform between
+  diameter_mean × (1 − spread) and diameter_mean × (1 + spread).
+- `Monodisperse(diameter = 1.0)`.
+- `CustomDiameters(diameters)`: any list of diameters.
 
 - Diameters, small-diameter unit: [OHern2003] "The diameter of the smaller particle
   is denoted by σ." ... "lengths are measured in units of σ"
 - Mean-diameter unit: [Somfai2005] "Our unit of length is the average grain
   diameter." [Shundyak2007] "our units are such that the mass density, the average
-  particle diameter and the Young's modulus of the grains are 1."
+  particle diameter, and the Young's modulus of the grains are 1."
+- `spread = 0.2`: [Somfai2005] "For the 2D simulations the spheres have
+  polydispersity to avoid crystallization: the diameters are uniformly distributed
+  between 0.8 and 1.2 times their average."
+- `Monodisperse` is an option, not the default, because equal disks crystallize in 2D
+  (the reason for the bidisperse mixture, §2). In 3D, [OHern2003] "we have studied the
+  same bidisperse mixture as well as monodisperse systems".
 - DEM software takes diameters: [LAMMPSset] "diameter value = diameter of spherical
   particle (distance units)"
 
 ## 4. Mass
 
-**Decision.** Equal mass for every particle by default. Option: mass from a material
-density (2D disc area or 3D sphere volume). Per-particle masses are stored in the
-output so spectra computed later use the same masses.
+**Decision.** `mass = EqualMass(1.0)`: every particle has mass 1, which sets the mass
+unit (**SoftPack choice**). Option: `Density(1.0; shape)`, mass from a material
+density, with `shape = :disc` (area) the default in 2D and `:sphere` (volume) in 3D.
+Per-particle masses are stored in the output so spectra computed later use the same
+masses.
 
 - Equal mass (jamming / soft-sphere convention): [OHern2003] "... where all
   particles have equal mass m."
 - Density-based mass (DEM convention): [LAMMPSset] "density/disc value = particle
   density for a 2d disc or ellipse (mass/distance^2 units)"; [Somfai2005] "The unit
   of mass is set by asserting that the material of the grains has unit density."
+  That is the reason for the default density 1.0.
+- `shape = :disc` in 2D: **SoftPack choice**, because SoftPack's 2D particles are
+  disks. `shape = :sphere` in 2D gives the Leiden convention: [Somfai2005] "2D
+  samples containing 600 spheres (their centers being confined to a plane)".
 
 ## 5. Convergence (stopping) criterion
 
-**Decision.** One rule for frictionless and frictional packings: the largest net
-force on any particle (and the largest net torque when friction is on) must be below
-`tol` times the mean contact force, and the pressure must be within `pressure_tol`
-of the target. Options: the Leiden absolute-acceleration rule, and kinetic-energy
-tests. The default `tol = 1e-8` is provisional (**SoftPack choice**, to be timed on
-frictional packings).
+**Decision.** `convergence = RelativeForce(tolerance = 1e-8)`, one rule for frictionless
+and frictional packings: the largest net force on any particle (and the largest net
+torque when friction is on) must be below `tolerance` times the mean contact force. The
+pressure must also be within `pressure_tolerance = 1e-4` (relative) of the target, and a
+run stops after `steps_max = 10^7` steps at most. Options: `LeidenAcceleration(tolerance =
+1e-10)`, `KineticEnergy(tolerance = 1e-8)`, `RestartTest()`, or any function of the
+packing state that returns true when done. The default `tolerance = 1e-8` is provisional
+(**SoftPack choice**, to be timed on frictional packings).
 
 - A tolerance relative to the typical force: [Agnolin2007] "Calculations are
   stopped when the net elastic force on each particle is below 10^-4 a^2 P, the
@@ -95,16 +171,25 @@ frictional packings).
   10^-8 P a^3." [Gilabert2007] "the net force on each disk is less than 10^-4 F_1,
   and the total moment is lower than 10^-4 F_1 a" (with F_1 = max(F_0, P a), the
   typical intergranular force).
-- Leiden absolute rule (option `LeidenAcceleration`): [Somfai2005] "Our packings
+- `LeidenAcceleration(tolerance = 1e-10)`: [Somfai2005] "Our packings
   are considered to have converged to mechanical equilibrium when all grains have
   acceleration less than 10^-10 in our reduced units". [Shundyak2007] builds its
   packings "As in [16]", reference 16 being [Somfai2005]. The number 1e-10 only
   reproduces the Leiden rule in Leiden units (E* = 1, mean diameter = 1, density 1).
-- Kinetic-energy tests (candidate options): [Agnolin2007] and [Gilabert2007] above;
-  [Xiong2019] stop each minimization on a maximum per-disk kinetic energy.
-- Restart test (candidate option): [Agnolin2007] "On setting all velocities to zero,
+- `KineticEnergy(tolerance = 1e-8)` (kinetic energy per particle below tolerance × P d^D, the
+  [Agnolin2007] value above); [Xiong2019] stop each minimization on a maximum
+  per-disk kinetic energy.
+- `RestartTest()` (zero all velocities, then check that the kinetic energy and the
+  unbalanced forces do not grow back): [Agnolin2007] "On setting all velocities to zero,
   it is observed that the sample does not regain kinetic energy beyond that value,
   while the unbalanced force level does not increase."
+- `pressure_tolerance = 1e-4`: the [Agnolin2007] value above (stress equal to P "with
+  relative error smaller than 10^-4"). [Gilabert2007] use the same 10^-4 level for
+  the pressure, scaled by their typical force F_1.
+- `steps_max = 10^7`: **SoftPack choice.** A safety cap, not a convergence test: a run
+  that hits it is returned with `converged = false` (§6). The value is twice the
+  5 × 10^6 cap of GranEJulia's packer, which SoftPack replaces and which stops at a
+  looser force tolerance (10^-4 against 10^-8 here).
 
 ## 6. A packing that does not converge
 
@@ -112,6 +197,9 @@ frictional packings).
 `converged = false`. Retrying with other seeds is the caller's job. **SoftPack
 choice**: never discard or silently save an unfinished packing; let the caller see
 and count failures (replacing failures conditions an ensemble on convergence).
+
+Option: `failure_action = :error` throws an error instead (default `:warn`), for batch
+scripts that should stop at the first failure. **SoftPack choice.**
 
 ## 7. Algorithms and combinations
 
@@ -131,14 +219,15 @@ but documented as non-standard.
 - We did not find a paper that makes frictional packings with FIRE (searched
   2026-11-18). That is why FIRE + friction is labeled non-standard.
 - The preparation path changes frictional packings, so the algorithm and its damping
-  settings (§8) are part of the packing's identity and are recorded in every output: [Henkes2010] the mobilized
-  contact fraction is bimodal over a range of pressures "due to the interplay of
-  elastic and viscous forces during the preparation of the packings"; see also
-  [Santos2024].
+  settings (§8) are part of the packing's identity and are recorded in every output.
+  [Henkes2010], on the relation between the friction coefficient and n_m (the
+  fraction of fully mobilized contacts): "Our simulations indicate that this relation
+  depends significantly on the preparation method of the sample, where packings
+  prepared with higher viscous damping have larger n_m"; see also [Santos2024].
 
 ## 8. Damping
 
-Damping sets how damped molecular dynamics (`DampedMD`) removes energy. FIRE removes
+Damping sets how damped molecular dynamics (`DampedDynamics`) removes energy. FIRE removes
 energy with its own velocity rules, so its default is no damping, but it accepts the
 same settings (§7: any combination is allowed).
 
@@ -163,7 +252,7 @@ not taken from a cited paper).
 ### Defaults
 
 ```julia
-DampedMD(
+DampedDynamics(
     damping = ContactDamping(
         normal          = 0.98,            # fraction of critical damping
         tangential      = 0.98,            # fraction of critical damping
@@ -262,7 +351,7 @@ sliding mass.**
   when the motion turns uphill: [Guenole2020] "the velocities are reset to zero at the
   beginning of the pseudo-dynamic run and also periodically during the run in FIRE
   2.0". Adding damping is not needed for FIRE to stop. **SoftPack choice**; both
-  settings take the same values as for `DampedMD`.
+  settings take the same values as for `DampedDynamics`.
 
 ### Options
 
@@ -271,7 +360,7 @@ contact law and friction model.
 
 | Option | Setting | Used by |
 |---|---|---|
-| Any other contact damping ratios | `ContactDamping(normal = ζn, tangential = ζt)` | |
+| Any other contact damping ratios | `ContactDamping(normal = ratio, tangential = ratio)` | |
 | Moderate contact damping (restitution about 0.5) | `ContactDamping(normal = 0.2, tangential = 0.2)` | ζ ≈ 0.18 is our conversion of [Santos2024] |
 | Normal damping only | `ContactDamping(normal = 0.98, tangential = 0)` | [Agnolin2007] |
 | Tangential ratio on the pair mass | `ContactDamping(tangential_mass = :pair)` | the usual raw-coefficient convention |
@@ -279,10 +368,10 @@ contact law and friction model.
 | No contact damping | `damping = nothing` | FIRE default |
 | Dashpot allowed to pull | `attractive = true` | LAMMPS without `limit_damping` [LAMMPSgran] |
 | Friction limit on total forces | `coulomb_limit = :total` | [LAMMPSgran] |
-| Stokes drag, always on | `drag = StokesDrag(velocity = γv)` | [Shimada2026], [Xiong2019] |
-| Stokes drag while compressing only | `drag = StokesDrag(velocity = γv, during = :compression)` | Leiden-style, [Somfai2007] |
-| Overdamped Stokes drag | `drag = StokesDrag(velocity = γv)` with γv large compared with the soft-mode frequencies | [Xiong2019] |
-| Spin drag only (for rolling) | `drag = StokesDrag(velocity = 0, spin = γs)` | |
+| Stokes drag, always on | `drag = StokesDrag(velocity = rate)` | [Shimada2026], [Xiong2019] |
+| Stokes drag while compressing only | `drag = StokesDrag(velocity = rate, during = :compression)` | Leiden-style, [Somfai2007] |
+| Overdamped Stokes drag | `drag = StokesDrag(velocity = rate)` with a rate large compared with the soft-mode frequencies | [Xiong2019] |
+| Spin drag only (for rolling) | `drag = StokesDrag(velocity = 0, spin = rate)` | |
 
 The options' own defaults and the reasons:
 
@@ -313,7 +402,7 @@ The options' own defaults and the reasons:
     particle decay at the same rate. Set it separately as [Shimada2026] do.
   - `during = :always`: drag on for the whole run, as in [Shimada2026] and
     [Xiong2019].
-  - `during = :compression`: drag on until the pressure is within `pressure_tol` of
+  - `during = :compression`: drag on until the pressure is within `pressure_tolerance` of
     the target, then off, and the packing settles under contact damping alone. The
     Leiden packings are made with drag that is later removed: [Somfai2007] "The
     packings are constructed by cooling while slowly inflating the particle radii in
@@ -333,13 +422,13 @@ packing the fastest vibration can be up to sqrt(z) times faster than one contact
 contact damping then damps it more strongly too. The worst case is about 0.08 t_col
 in 2D (z = 4) and 0.05 t_col in 3D (z = 6), still 3.8 and 2.6 times the default step.
 With near-critical contact damping, keep the step fraction at or below about 1/20.
-**SoftPack note**: estimates, to be checked once `DampedMD` runs.
+**SoftPack note**: estimates, to be checked once `DampedDynamics` runs.
 
 ## 9. Rattler rules
 
 **Decision.** `rattlers` takes any function of the contact network that returns a
 true/false mask per particle. Built-in rules: `ContactCount()` (default),
-`TwoContact()`, `ForceFloor(floor)`, `Unresolved(floor = :tol)`. Every rule takes a
+`TwoContact()`, `ForceFloor(floor = 1e-3)`, `Unresolved(floor = :tolerance)`. Every rule takes a
 `cone_test` option, on by default. Rattlers are removed by default.
 `find_rattlers(packing, rule)` applies a rule to a finished packing. The mean force
 `<f>` is taken over all contacts before anything is removed.
@@ -356,12 +445,13 @@ true/false mask per particle. Built-in rules: `ContactCount()` (default),
   particles with two contacts as pseudo-rattlers to distinguish them from true
   rattlers", and count samples "remaining jammed after removing rattlers and
   pseudo-rattlers".
-- `ForceFloor` (contacts below floor·<f> count as broken): [Shundyak2007] "we always
-  take out rattlers, by considering contact forces less than 10^-3 times the average
-  force broken and removing particles with less than two contacts."
+- `ForceFloor` (contacts below floor·<f> count as broken), default `floor = 1e-3`:
+  [Shundyak2007] "we always take out rattlers by considering contact forces less than
+  10^-3 times the average force broken and removing particles, with less than two
+  contacts."
 - `Unresolved` (particles whose contacts all carry less than the force tolerance):
   [Agnolin2007] "We also discard from the backbone all spheres with only forces
-  smaller than the tolerance." Tying the floor to the packing's own tolerance (`floor = :tol`) is a
+  smaller than the tolerance." Tying the floor to the packing's own tolerance (`floor = :tolerance`) is a
   **SoftPack choice**: the rule means "below the stopping rule's noise".
 - Cone test (a two-contact particle is removed when no forces inside its friction cones
   can hold it): [Gilabert2007] "Without cohesion, the Coulomb condition restricts
@@ -377,7 +467,8 @@ true/false mask per particle. Built-in rules: `ContactCount()` (default),
 
 **Decision.** Seeds use StableRNGs.jl so a seed gives the same packing on every
 Julia version; every output records the SoftPack version, git commit, Julia version,
-seed and RNG.
+seed and RNG. Default `seed = 1`, so `pack()` with no arguments gives the same packing
+every time (**SoftPack choice**).
 
 - [JuliaRandom] "a minor release of Julia (e.g. 1.3 to 1.4) *may change* the
   sequence of pseudorandom numbers generated from a specific seed."
@@ -399,7 +490,7 @@ floating-point values. It is read natively by MATLAB, Python and Julia:
 - [HDF5jl] Julia's JLD/JLD2 files "are still both regular HDF5 files and are
   therefore compatible with any HDF5 reader or writer."
 
-Two rules follow from the sources:
+Three rules follow from the sources:
 
 - Store per-particle and per-contact quantities as one 1-D dataset per column
   (`x`, `y`, `diameter`, ...), not as N x D matrices: [HDF5jl] "Julia, like Fortran
@@ -417,12 +508,22 @@ Two rules follow from the sources:
   that Blosc-compressed datasets cannot be read by "vanilla HDF5 distributions".
 
 **Rattlers in the output.** When a rattler rule is applied (the default), the main
-file holds only the remaining particles, with their original ids. An option writes
-a second file with every particle and a rattler flag. With `rattlers = nothing`
-there is one file with every particle. **SoftPack choice**.
+file holds only the remaining particles, with their original ids. `rattlers_file =
+true` also writes a second file with every particle and a rattler flag (default
+`false`). With `rattlers = nothing` there is one file with every particle.
+**SoftPack choice**.
 
-**Movies and snapshots.** `pack()` can record snapshots during the run and render a
-GIF or video from them; off by default. **SoftPack choice**.
+**Compression.** Default `compression = nothing`. Packing files are small, and
+uncompressed datasets can be memory-mapped: [HDF5jl] "This is possible only under
+particular conditions: when the dataset is an array of standard 'bits' types (e.g.,
+Float64 or Int32) and no chunking/compression is being used." `compression = :gzip`
+uses level 4 unless a level is given: [h5py] "compression_opts sets the compression
+level and may be an integer from 0 to 9, default is 4."
+
+**Movies and snapshots.** `pack()` can record snapshots during the run
+(`snapshots = Snapshots(every = interval)`) and render a GIF or video from them (`movie =
+Movie(path; every = interval)`); both default to `nothing`. **SoftPack choice**. `every` has
+no default: a useful interval depends on how long the run is.
 
 **Formats.** HDF5 is the default. CSV is an option, for spreadsheets or reading
 without an HDF5 library. MATLAB `.mat` and JLD2 are not offered: MATLAB reads HDF5
@@ -431,12 +532,13 @@ OVITO) and LAMMPS data files may be added later. **SoftPack choice.**
 
 ## 12. Time step
 
-**Decision.** `dt` is a setting. Default: 1/50 of the shortest binary collision
+**Decision.** `timestep` is a setting. Default `timestep = CollisionTime(fraction = 1/50)`: 1/50
+of the shortest binary collision
 time t_col = π sqrt(m_eff / k), taken over the smallest particle mass, the stiffest
 contact (normal, or tangential with rotation when friction is on), and for Hertzian
 contacts the stiffness at the largest overlap expected; a run-time check warns if a
-contact becomes stiffer than the chosen `dt` resolves. A fixed value can be given
-instead. For FIRE this is the starting step; FIRE then adapts it.
+contact becomes stiffer than the chosen `timestep` resolves. A fixed value can be given
+instead. For FIRE this is the starting step; FIRE then adapts it (§14).
 
 - 1/50 of the collision time: [Silbert2001] "an accurate simulation typically
   requires δt ∼ t_col/50", with t_col = π (2 k_n/m − γ_n²/4)^(-1/2).
@@ -454,3 +556,73 @@ instead. For FIRE this is the starting step; FIRE then adapts it.
   10 times and a minimum step of 0.02 times the starting step.
 - With near-critical contact damping the stable step is smaller. The default keeps a
   margin of at least about 2.6 (estimate in §8, "Time step with damping").
+
+## 13. Friction models
+
+**Decision.** `friction = nothing` (frictionless, §2). Options:
+
+- `CundallStrack(friction_coefficient = 0.5, stiffness_ratio = :matched)`: a linear tangential spring with
+  Coulomb slip, the "Hookean spring-dashpot-slider interaction potential (Cundall and
+  Strack, 1979)" of [Santos2024]. Works with `Hookean` or `Hertzian` contacts.
+- `Mindlin(friction_coefficient = 0.5, poisson_ratio = 0.0)`: the Hertz-Mindlin tangential force, whose stiffness
+  grows with the overlap. Needs `Hertzian` contacts.
+
+Keyword names follow §1 (full words, no symbols). How damping and the Coulomb limit
+interact is in §8.
+
+- `friction_coefficient = 0.5`: [Somfai2005] packings are "prepared with friction coefficient µ = 0.5
+  and Poisson ratio ν = 0"; [Silbert2001] use "friction coefficient µ = 0.50". It is a
+  common value, not a material constant. Frictional studies usually vary μ:
+  [Henkes2010] cover μ from 10^-3 to 10^3, and [Agnolin2007] use "a moderate,
+  plausible value µ = 0.3". Production runs should set `friction_coefficient`.
+- `stiffness_ratio = :matched`: the tangential over the normal stiffness,
+  k_t/k_n = 1/(1 + m R²/I), which makes the tangential contact
+  vibration (sliding plus rotation, §8) exactly as fast as the normal one for two
+  equal particles. That is 1/3 for disks and 2/7 for spheres. [Silbert2001] use
+  k_t/k_n = 2/7 for spheres for this reason (equal periods of normal and shear contact
+  oscillations), and LAMMPS uses 2/7 when K_t is not given [LAMMPSgran]. Applying the
+  same rule to disks is a **SoftPack choice**. The tangential direction then does not
+  shorten the time step (§12), and the default damping ratio (§8) gives both
+  directions the same decay time. [Silbert2001], for their flows: "However, the
+  contact dynamics are not very sensitive to the precise value of this ratio." Any
+  number can be given instead.
+- `poisson_ratio = 0.0`: the Leiden choice. [Shundyak2007] "The Poisson ratio of the grains is
+  taken to be zero"; [Somfai2005] same (quote above). With ν = 0 the two stiffnesses
+  are equal: [Somfai2005] "for ν = 0, the value we use in most of the simulations, the
+  two effective stiffnesses dFt/dt and dFn/dn are equal". The tangential vibration is
+  then faster than the normal one (sqrt(3) times for disks), so it sets the time step
+  (§12). For real materials, [Silbert2001] "For Hertzian contacts [37], the ratio
+  kt/kn depends on the Poisson ratio of the material, and is about 2/3 for most
+  materials."
+
+## 14. FIRE settings
+
+**Decision.** `FIRE()` uses the FIRE 2.0 defaults of LAMMPS, listed in [Guenole2020]
+(Table 1), the paper that assessed FIRE 2.0 and implemented it in LAMMPS. FIRE itself
+is from [Bitzek2006].
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `timestep_max` | `10` | largest step, in units of the starting step (§12) |
+| `timestep_min` | `0.02` | smallest step, same units |
+| `delay` | `20` | steps to wait after an uphill move before the step may grow |
+| `timestep_grow` | `1.1` | factor by which the step grows |
+| `timestep_shrink` | `0.5` | factor by which the step shrinks after an uphill move |
+| `mixing_coefficient` | `0.25` | starting coefficient for mixing the velocity and force directions |
+| `mixing_shrink` | `0.99` | factor by which that coefficient shrinks |
+| `uphill_max` | `2000` | consecutive uphill moves before the run stops |
+| `inertia_correction` | `true` | move back half a step after an uphill move (LAMMPS `halfstepback`) |
+| `delay_initial` | `true` | apply the delay at the start of the run too |
+| `integrator` | `:semi_implicit_euler` | `:velocity_verlet` is the option |
+| `damping`, `drag` | `nothing` | see §8 |
+
+- All values except `damping` and `drag`: [Guenole2020] Table 1 (LAMMPS `min_modify`
+  defaults for FIRE 2.0). `inertia_correction` is their name for the half step back:
+  LAMMPS `halfstepback`, "yes activates the inertia correction" [Guenole2020].
+- `integrator = :semi_implicit_euler`: [Guenole2020] "Hence we recommend the usage of
+  FIRE 2.0 with an Euler Implicit integrator." (Their Euler implicit is the
+  semi-implicit, or symplectic, Euler scheme.) Velocity Verlet is also suitable:
+  [Guenole2020] "Symplectic schemes like Euler semi-implicit (also called symplectic
+  Euler), Leapfrog or Velocity Verlet are more robust against varying timesteps".
+- A run that reaches `uphill_max` is returned with `converged = false` (§6), where
+  LAMMPS ends the minimization. **SoftPack choice**, to match §6.
