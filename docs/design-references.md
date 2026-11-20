@@ -683,6 +683,18 @@ pack(algorithm = DampedDynamics(damping = ContactDamping(tangential = 0.98)))
 - Equal normal and tangential damping is also the LAMMPS-based choice of
   [Santos2024]: "The normal (n) and tangential (s) particle spring (k) and damping
   (γ) parameters are set equal to each other".
+- The same ratio makes the damping exactly proportional to the stiffness. A
+  contact's dashpot over its spring is $b = \gamma/k = 2\zeta/\omega$, with
+  $\omega = \sqrt{k_n/m_n}$ for the normal direction and $\sqrt{k_t/m_t}$ for the
+  tangential one. With `stiffness_ratio = :matched` (§13) and `tangential_mass =
+  :with_rotation` (below), the two frequencies are equal, so one $\zeta$ gives one $b$
+  in both directions and $\boldsymbol\Gamma = b\,\mathbf K_0$, with $\mathbf K_0$ the
+  unstressed stiffness matrix. The modes then decouple, and every underdamped mode
+  decays at exactly $b\,\omega_\ell^2/2$. One raw coefficient for both directions
+  would instead give $\zeta_t = 3\zeta_n$ for disks (overdamped sliding) and mix the
+  modes. Exact for Hookean contacts and equal masses; with Hertz or Mindlin contacts,
+  or `Density` masses, $b$ varies from contact to contact. **SoftPack note** (our
+  derivation).
 - It applies only when friction is on. Frictionless contacts have no tangential
   spring, so there is no tangential critical value to take a fraction of. A
   tangential dashpot without friction is `RelativeVelocityDamping` (Options).
