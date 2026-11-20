@@ -12,7 +12,7 @@ changed, followed by the decision and its reasons. Equations are LaTeX (`$...$`)
 which GitHub renders; quoted text keeps the source's wording and notation as
 transcribed.
 
-Status: design stage (no engine code yet). Last updated 2026-11-19. Every setting has
+Status: design stage (no engine code yet). Last updated 2026-11-20. Every setting has
 a default and a reason (§0). Not designed yet: how `pack()` reaches the target
 pressure (initial state and compression protocol).
 
@@ -41,7 +41,7 @@ reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
 | `restart_file` | `nothing` | `RestartFile(path; every = interval)` | 6 |
 | `algorithm` | `FIRE()` | `DampedDynamics()` | 7, 14 |
 | `timestep` | `CollisionTime(fraction = 1/50)` | any fraction, or a fixed number | 12 |
-| `DampedDynamics` `damping` | `ContactDamping(normal = 0.98, tangential = 0.98)` | other ratios, `ViscousRate(normal = 0.5, tangential = 0.5)`, `nothing` | 8 |
+| `DampedDynamics` `damping` | `ContactDamping(normal = 0.98, tangential = 0.98)` | other ratios, `ViscousRate(normal = 0.5, tangential = 0.5)`, `RelativeVelocityDamping(rate = 0.5)`, `nothing` | 8 |
 | `DampedDynamics` `drag` | `nothing` | `StokesDrag(velocity = rate)`, with `spin` and `during` | 8 |
 | `FIRE` `damping`, `drag` | `nothing`, `nothing` | same as `DampedDynamics` | 8 |
 | FIRE parameters | LAMMPS FIRE 2.0 defaults | any value | 14 |
@@ -580,6 +580,7 @@ accepts the same settings (§7: any combination is allowed).
 |---|---|---|
 | Normal contact dashpot | Approach and separation speed of touching particles | `ContactDamping(normal = ...)` |
 | Tangential contact dashpot | Sliding speed at the contact point (friction on only) | `ContactDamping(tangential = ...)` |
+| Relative-velocity dashpot | Full relative velocity of the two centers, one rate for both directions (friction on or off) | `RelativeVelocityDamping(rate = ...)` |
 | Stokes drag on velocity | Each particle's absolute velocity | `StokesDrag(velocity = ...)` |
 | Stokes drag on spin | Each particle's absolute spin | `StokesDrag(spin = ...)` |
 | Coulomb sliding | Built into friction | not a setting |
@@ -599,6 +600,29 @@ and soft modes are overdamped and creep. Here $\zeta$ is the contact damping rat
 $\gamma$ the drag rate and $\omega$ an angular frequency. **SoftPack note** (standard
 result for damping proportional to stiffness or to mass; not taken from a cited
 paper).
+
+The contact-damping result holds for `ContactDamping` with its defaults and Hookean
+contacts, which is exactly proportional to the unstressed stiffness: normal-only
+without friction, and with friction because `stiffness_ratio = :matched` and
+`tangential_mass = :with_rotation` give both directions the same $\gamma/k$.
+`RelativeVelocityDamping` is not proportional. Without friction its damping matrix is
+$\boldsymbol\Gamma = b\,(\mathbf K_0 + \mathbf K_\perp)$, with $b = c/k$ ($c$ the
+dashpot coefficient, $k$ the contact stiffness), $\mathbf K_0$ the unstressed
+stiffness matrix, and $\mathbf K_\perp$ the same sum over contacts with the tangential
+projector $\mathbf I - \hat{\mathbf n}\hat{\mathbf n}^\top$ in place of
+$\hat{\mathbf n}\hat{\mathbf n}^\top$: a damping term with no spring behind it. To
+first order in the damping (mass-weighted matrices, $|v_\ell\rangle$ the unit vector of
+mode $\ell$), the mode's decay rate is
+
+$$\beta_\ell \approx \frac{b}{2}\left[\omega_\ell^2 + \langle v_\ell|\mathbf K_\perp|v_\ell\rangle\right].$$
+
+Soft modes whose contacts mostly slide keep a finite decay rate as
+$\omega_\ell \to 0$, so their damping ratio grows and they creep, as under drag.
+Low-frequency plane waves, with little relative motion, still decay as
+$\omega_\ell^2$. Slow motion near jamming is mostly sliding: [Vagberg2014] find that
+"the relative motion of particles in contact is almost always tangential" (shear flow
+below jamming, $\phi \gtrsim 0.6$). **SoftPack note** (our derivation, the same
+algebra as the proportional case).
 
 ### Defaults
 
@@ -659,8 +683,9 @@ pack(algorithm = DampedDynamics(damping = ContactDamping(tangential = 0.98)))
 - Equal normal and tangential damping is also the LAMMPS-based choice of
   [Santos2024]: "The normal (n) and tangential (s) particle spring (k) and damping
   (γ) parameters are set equal to each other".
-- It applies only when friction is on. Frictionless contacts carry no tangential
-  force, so there is nothing to damp.
+- It applies only when friction is on. Frictionless contacts have no tangential
+  spring, so there is no tangential critical value to take a fraction of. A
+  tangential dashpot without friction is `RelativeVelocityDamping` (Options).
 
 ```julia
 pack(algorithm = DampedDynamics(damping = ContactDamping(tangential_mass = :with_rotation)))
@@ -759,6 +784,7 @@ contact law and friction model.
 | Normal damping only | `ContactDamping(normal = 0.98, tangential = 0)` | [Agnolin2007] |
 | Tangential ratio on the pair mass | `ContactDamping(tangential_mass = :pair)` | the usual raw-coefficient convention |
 | Raw damping rates instead of ratios | `ViscousRate(normal = 0.5, tangential = 0.5)` | [Santos2024], [LAMMPSgran] |
+| One rate on the full relative velocity, friction on or off | `RelativeVelocityDamping(rate = 0.5)` | CD model of [Vagberg2014], after Durian's bubble model |
 | No contact damping | `damping = nothing` | FIRE default |
 | Dashpot allowed to pull | `attractive = true` | LAMMPS without `limit_damping` [LAMMPSgran] |
 | Friction limit on total forces | `coulomb_limit = :total` | [LAMMPSgran] |
@@ -785,6 +811,39 @@ small-particle mass, $k$ the normal stiffness constant).
 - A raw rate damps Hertz contacts less as they compress; use `ContactDamping` for a
   fixed ratio. `ViscousRate` takes the same `attractive` and `coulomb_limit` keywords
   with the same defaults.
+
+```julia
+pack(algorithm = DampedDynamics(damping = RelativeVelocityDamping(rate = 0.5)))
+```
+
+**Decision.** The option's defaults: one dashpot on the full relative velocity of the
+two centers,
+
+$$\mathbf F_{ij} = -m_\text{eff}\,\gamma\,(\mathbf v_i - \mathbf v_j),$$
+
+with $\gamma = 0.5$ in units of $1/\tau$, as for `ViscousRate`.
+
+- One rate damps both the normal and the tangential relative motion, with or without
+  friction. It acts on the centers' velocities only and applies no torque, so a
+  particle spinning in place is not damped, while pure rolling is (the reverse of
+  `ContactDamping`).
+- Without friction, `ContactDamping` and `ViscousRate` are normal-only. The two forms
+  are the CD and CD$_n$ models of [Vagberg2014]: "CD$_n$ is typically used in models
+  of massive dry granular particles [15]. CD was introduced by Durian [12] to describe
+  the viscous interaction between massless foam bubbles." The choice changes the
+  result: [Vagberg2014] "the rheology of soft-core frictionless disks is strongly
+  dependent on the specific form of the dissipative interaction" (shear flow below
+  jamming, not packing preparation). Use this option to prepare packings with the
+  same damping law as a later simulation that damps the full relative velocity.
+- Not the default. It is never proportional to the stiffness, so modes mix and sliding
+  soft modes creep (channels above). Without friction its tangential half damps a
+  direction with no spring, so there is no critical value and a ratio like 0.98 has no
+  meaning; that is why it takes a raw rate. **SoftPack choice.**
+- `rate = 0.5` is the `ViscousRate` default [Santos2024], so on frictionless particles
+  swapping `ViscousRate(normal = 0.5)` for this option only adds the tangential half.
+  **SoftPack choice.**
+- It takes the same `attractive` and `coulomb_limit` keywords with the same defaults,
+  applied to the normal and tangential parts of its force.
 
 ```julia
 pack(algorithm = DampedDynamics(damping = ContactDamping(coulomb_limit = :total)))
