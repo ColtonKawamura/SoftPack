@@ -10,7 +10,11 @@ call, and the reason is given.
 Each decision starts with the call that sets it explicitly, so it can be copied and
 changed, followed by the decision and its reasons. Equations are LaTeX (`$...$`),
 which GitHub renders; quoted text keeps the source's wording and notation as
-transcribed.
+transcribed. Notation: $\gamma$ is a dashpot coefficient (force per velocity), $r$ a
+damping rate ($1/\text{time}$, with $\gamma = m_\text{eff}\,r$), $\zeta$ a damping ratio,
+and $a$, $b$ the mass- and stiffness-proportional constants of the damping matrix,
+$\boldsymbol\Gamma = a\mathbf M + b\mathbf K$. The full derivations are in the
+[wiki](wiki/README.md), one page per section.
 
 Status: design stage (no engine code yet). Last updated 2026-11-20. Every setting has
 a default and a reason (§0). Not designed yet: how `pack()` reaches the target
@@ -586,33 +590,39 @@ accepts the same settings (§7: any combination is allowed).
 | Coulomb sliding | Built into friction | not a setting |
 
 Contact damping and Stokes drag fail in opposite ways on the slow, collective (soft)
-modes, which are the last motion left when a run nears its stopping rule. Contact
-damping grows with stiffness, so a mode's damping ratio is roughly
+modes, which are the last motion left when a run nears its stopping rule. Both are
+Rayleigh damping, $\boldsymbol\Gamma = a\mathbf M + b\mathbf K_0$ ($\mathbf M$ the mass
+matrix, $\mathbf K_0$ the unstressed stiffness matrix). Each undamped mode $\ell$, of
+angular frequency $\omega_\ell$, then obeys its own damped-oscillator equation,
 
-$$\zeta_\text{mode} \approx \zeta\,\frac{\omega_\text{mode}}{\omega_\text{contact}},$$
+$$\lambda_\ell^2 + \left(a + b\,\omega_\ell^2\right)\lambda_\ell + \omega_\ell^2 = 0,$$
 
-and soft modes are barely damped and keep ringing. Stokes drag is the same for every
-mode, so a mode's damping ratio is
+so while underdamped it decays at $\beta_\ell = -\mathrm{Re}\,\lambda_\ell =
+(a + b\,\omega_\ell^2)/2$, with damping ratio $\zeta_\ell = \beta_\ell/\omega_\ell$.
 
-$$\zeta_\text{mode} = \frac{\gamma}{2\,\omega_\text{mode}},$$
+- Contact damping is the $b$ term. For `ContactDamping` with its defaults and Hookean
+  contacts, $b = \gamma/k = 2\zeta/\omega_c$, with $\zeta$ the contact damping ratio and
+  $\omega_c = \sqrt{k_n/M_n}$ the contact frequency (tangential decision below). Then
+  $\beta_\ell = b\,\omega_\ell^2/2$ and $\zeta_\ell = \zeta\,\omega_\ell/\omega_c$: the
+  lowest-frequency modes die last, ringing with $\zeta_\ell \ll 1$.
+- Stokes drag is the $a$ term, with $a$ the drag rate. Then $\beta_\ell = a/2$ for every
+  mode and $\zeta_\ell = a/(2\,\omega_\ell)$: soft modes are overdamped and creep,
+  relaxing at about $\omega_\ell^2/a$.
 
-and soft modes are overdamped and creep. Here $\zeta$ is the contact damping ratio,
-$\gamma$ the drag rate and $\omega$ an angular frequency. **SoftPack note** (standard
-result for damping proportional to stiffness or to mass; not taken from a cited
+**SoftPack note** (standard result for Rayleigh damping; not taken from a cited
 paper).
 
-The contact-damping result holds for `ContactDamping` with its defaults and Hookean
-contacts, which is exactly proportional to the unstressed stiffness: normal-only
-without friction, and with friction because `stiffness_ratio = :matched` and
-`tangential_mass = :with_rotation` give both directions the same $\gamma/k$.
+The $b$ result is exact for `ContactDamping` with its defaults and Hookean contacts:
+normal-only without friction, and with friction because `stiffness_ratio = :matched`
+and `tangential_mass = :with_rotation` give both directions the same $b$.
 `RelativeVelocityDamping` is not proportional. Without friction its damping matrix is
-$\boldsymbol\Gamma = b\,(\mathbf K_0 + \mathbf K_\perp)$, with $b = c/k$ ($c$ the
-dashpot coefficient, $k$ the contact stiffness), $\mathbf K_0$ the unstressed
-stiffness matrix, and $\mathbf K_\perp$ the same sum over contacts with the tangential
-projector $\mathbf I - \hat{\mathbf n}\hat{\mathbf n}^\top$ in place of
+$\boldsymbol\Gamma = b\,(\mathbf K_0 + \mathbf K_\perp)$, with $b = \gamma/k$ ($\gamma$ the
+dashpot coefficient, $k$ the contact stiffness) and $\mathbf K_\perp$ the same sum over
+contacts as $\mathbf K_0$ with the tangential projector
+$\mathbf I - \hat{\mathbf n}\hat{\mathbf n}^\top$ in place of
 $\hat{\mathbf n}\hat{\mathbf n}^\top$: a damping term with no spring behind it. To
 first order in the damping (mass-weighted matrices, $|v_\ell\rangle$ the unit vector of
-mode $\ell$), the mode's decay rate is
+mode $\ell$),
 
 $$\beta_\ell \approx \frac{b}{2}\left[\omega_\ell^2 + \langle v_\ell|\mathbf K_\perp|v_\ell\rangle\right].$$
 
@@ -680,9 +690,13 @@ pack(algorithm = DampedDynamics(damping = ContactDamping(tangential = 0.98)))
   normal and for the tangential force". [Silbert2001], whose baseline has no
   tangential damping, report for their flow simulations: "Making γt/γn non-zero
   quickens the approach to the steady state by draining out more energy."
-- Equal normal and tangential damping is also the LAMMPS-based choice of
-  [Santos2024]: "The normal (n) and tangential (s) particle spring (k) and damping
-  (γ) parameters are set equal to each other".
+- [Santos2024] also damp both directions, with equal raw values: "The normal (n)
+  and tangential (s) particle spring (k) and damping (γ) parameters are set equal to
+  each other". Their γ is a LAMMPS rate, multiplied by the pair mass in both
+  directions [LAMMPSgran], so this is the `ViscousRate` convention with $k_t = k_n$,
+  not an equal ratio. For their frictional spheres ($M_t = M_n/3.5$) it makes the
+  tangential ratio $\sqrt{3.5} \approx 1.9$ times the normal one (our conversion). It
+  supports damping both directions at a similar strength, not the equal ratio itself.
 - The same ratio makes the damping exactly proportional to the stiffness. A
   contact's dashpot over its spring is $b = \gamma/k = 2\zeta/\omega$, with
   $\omega = \sqrt{k_n/m_n}$ for the normal direction and $\sqrt{k_t/m_t}$ for the
@@ -822,14 +836,14 @@ The options' own defaults and the reasons:
 pack(algorithm = DampedDynamics(damping = ViscousRate(normal = 0.5, tangential = 0.5)))
 ```
 
-**Decision.** The option's defaults: dashpot force $-m_\text{eff}\,\gamma\,v$ with
-$\gamma = 0.5$ in both directions, in units of $1/\tau$, $\tau = \sqrt{m/k}$ ($m$ the
-small-particle mass, $k$ the normal stiffness constant).
+**Decision.** The option's defaults: dashpot force $-\gamma\,v$ with coefficient
+$\gamma = m_\text{eff}\,r$ and rate $r = 0.5$ in both directions, in units of $1/\tau$,
+$\tau = \sqrt{m/k}$ ($m$ the small-particle mass, $k$ the normal stiffness constant).
 
-- The default values are [Santos2024]'s, $\gamma_n = \gamma_s = 0.5/\tau$ with
-  $\tau = \sqrt{m/k_n}$, as are the equal values for both directions (quote above).
-  For equal masses ($m_\text{eff} = m/2$) this is
-  $\zeta = \tfrac{\gamma}{2}\sqrt{m_\text{eff}/k} \approx 0.18$, a restitution
+- The default values are [Santos2024]'s, $r_n = r_s = 0.5/\tau$ (their $\gamma_n$,
+  $\gamma_s$, LAMMPS rates) with $\tau = \sqrt{m/k_n}$, as are the equal values for
+  both directions (quote above). For equal masses ($m_\text{eff} = m/2$) this is
+  $\zeta = \tfrac{r}{2}\sqrt{m_\text{eff}/k} \approx 0.18$, a restitution
   coefficient of about 0.57 (our conversion).
 - A raw rate damps Hertz contacts less as they compress; use `ContactDamping` for a
   fixed ratio. `ViscousRate` takes the same `attractive` and `coulomb_limit` keywords
@@ -842,9 +856,9 @@ pack(algorithm = DampedDynamics(damping = RelativeVelocityDamping(rate = 0.5)))
 **Decision.** The option's defaults: one dashpot on the full relative velocity of the
 two centers,
 
-$$\mathbf F_{ij} = -m_\text{eff}\,\gamma\,(\mathbf v_i - \mathbf v_j),$$
+$$\mathbf F_{ij} = -\gamma\,(\mathbf v_i - \mathbf v_j), \qquad \gamma = m_\text{eff}\,r,$$
 
-with $\gamma = 0.5$ in units of $1/\tau$, as for `ViscousRate`.
+with rate $r = 0.5$ in units of $1/\tau$, as for `ViscousRate`.
 
 - One rate damps both the normal and the tangential relative motion, with or without
   friction. It acts on the centers' velocities only and applies no torque, so a
@@ -889,9 +903,10 @@ or 1 if tangential damping force is excluded or included".
 pack(algorithm = DampedDynamics(drag = StokesDrag(velocity = rate, spin = rate, during = :always)))  # rate: required, no default
 ```
 
-**Decision.** The option's defaults: force $\mathbf{F} = -\gamma_v\,m\,\mathbf{v}$ and
-torque $\mathbf{T} = -\gamma_s\,I\,\boldsymbol{\omega}$, with rates $\gamma_v$
-(`velocity`) and $\gamma_s$ (`spin`) in units of $1/\tau$.
+**Decision.** The option's defaults: force $\mathbf{F} = -a_v\,m\,\mathbf{v}$ and
+torque $\mathbf{T} = -a_s\,I\,\boldsymbol{\omega}$, with rates $a_v$ (`velocity`) and
+$a_s$ (`spin`) in units of $1/\tau$. This is the mass-proportional term $a\mathbf M$ of
+Rayleigh damping (channels above).
 
 - `velocity` has **no default** and must be given. [Shimada2026] and [Xiong2019]
   do not state numerical values in their texts, and the right size depends on the
@@ -1128,7 +1143,8 @@ the starting step; FIRE then adapts it (§14).
 
 - 1/50 of the collision time: [Silbert2001] "an accurate simulation typically
   requires δt ∼ t_col/50", with
-  $t_\text{col} = \pi\left(2k_n/m - \gamma_n^2/4\right)^{-1/2}$.
+  $t_\text{col} = \pi\left(2k_n/m - r_n^2/4\right)^{-1/2}$ (their $\gamma_n$ is a rate,
+  our $r_n$).
 - Other values in use: [Santos2024] "The simulation time step was set to
   ∆t = 0.02τ. A time step ∆t = 0.002τ was also tested and did not change the
   results for the pressures studied within the uncertainties." [Ishima2023] use
@@ -1202,6 +1218,21 @@ spheres.
   their flows: "However, the
   contact dynamics are not very sensitive to the precise value of this ratio." Any
   number can be given instead.
+
+- With equal damping ratios and `tangential_mass = :with_rotation` (§8), it also makes
+  contact damping exactly proportional to the unstressed stiffness. Each direction has
+  $b = \gamma/k = 2\zeta/\omega$, and $\omega = \sqrt{k_n/M_n} = \sqrt{k_t/M_t}$ is the
+  same in both, so $\boldsymbol\Gamma = b\,\mathbf K_0$ and every underdamped mode decays
+  at $b\,\omega_\ell^2/2$. With another ratio the tangential constant $b_t = \gamma_t/k_t$
+  differs from $b$ and the modes mix. To first order in the damping, with $\mathbf K_t$
+  the tangential-spring part of $\mathbf K_0$ (mass-weighted),
+
+$$\beta_\ell \approx \frac12\left[b\,\omega_\ell^2 + (b_t - b)\,\langle v_\ell|\mathbf K_t|v_\ell\rangle\right],$$
+
+  which lies between $b\,\omega_\ell^2/2$ and $b_t\,\omega_\ell^2/2$ because
+  $0 \le \langle v_\ell|\mathbf K_t|v_\ell\rangle \le \omega_\ell^2$. For example,
+  `Mindlin` with $\nu = 0$ ($k_t = k_n$) gives $b_t = b/\sqrt3$ for disks, contact by
+  contact. **SoftPack note** (our derivation).
 
 ```julia
 pack(contact = Hertzian(), friction = Mindlin(poisson_ratio = 0.0))
