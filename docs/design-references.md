@@ -713,6 +713,17 @@ pack(algorithm = DampedDynamics(damping = ContactDamping(tangential_mass = :with
 $$\frac{1}{M_t} = \frac{1}{m_i} + \frac{1}{m_j} + \frac{R_i^2}{I_i} + \frac{R_j^2}{I_j},
 \qquad \frac{1}{M_n} = \frac{1}{m_i} + \frac{1}{m_j}.$$
 
+- Each dashpot is the given fraction $\zeta$ of its own critical value,
+
+$$\gamma_{n,\text{crit}} = 2\sqrt{k_n M_n}, \qquad \gamma_{t,\text{crit}} = 2\sqrt{k_t M_t},$$
+
+  so one $\zeta$ does not mean one coefficient. For equal disks ($M_n = m/2$,
+  $M_t = m/6$) with `stiffness_ratio = :matched` ($k_t = k_n/3$, §13),
+
+$$\frac{\gamma_t}{\gamma_n} = \sqrt{\frac{k_t M_t}{k_n M_n}} = \frac{1}{3}.$$
+
+  Both directions decay equally fast, with a tangential coefficient a third of the
+  normal one.
 - For equal disks $M_t = M_n/3$, for equal spheres $M_t = M_n/3.5$. A ratio measured
   on the pair mass $M_n$ would really be $0.98\sqrt{3} \approx 1.7$ for disks and
   $0.98\sqrt{3.5} \approx 1.8$ for spheres, which is overdamped and slow. Measuring it
