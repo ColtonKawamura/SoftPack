@@ -16,7 +16,7 @@ and $a$, $b$ the mass- and stiffness-proportional constants of the damping matri
 $\boldsymbol\Gamma = a\mathbf M + b\mathbf K$. The full derivations are in the
 [wiki](wiki/README.md), one page per section.
 
-Status: design stage (no engine code yet). Last updated 2026-11-20. Every setting has
+Status: design stage (no engine code yet). Last updated 2026-11-21. Every setting has
 a default and a reason (§0). Not designed yet: how `pack()` reaches the target
 pressure (initial state and compression protocol).
 
@@ -597,8 +597,7 @@ angular frequency $\omega_\ell$, then obeys its own damped-oscillator equation,
 
 $$\lambda_\ell^2 + \left(a + b\,\omega_\ell^2\right)\lambda_\ell + \omega_\ell^2 = 0,$$
 
-so while underdamped it decays at $\beta_\ell = -\mathrm{Re}\,\lambda_\ell =
-(a + b\,\omega_\ell^2)/2$, with damping ratio $\zeta_\ell = \beta_\ell/\omega_\ell$.
+so while underdamped it decays at $\beta_\ell = -\mathrm{Re}\,\lambda_\ell = (a + b\,\omega_\ell^2)/2$, with damping ratio $\zeta_\ell = \beta_\ell/\omega_\ell$.
 
 - Contact damping is the $b$ term. For `ContactDamping` with its defaults and Hookean
   contacts, $b = \gamma/k = 2\zeta/\omega_c$, with $\zeta$ the contact damping ratio and
@@ -865,7 +864,7 @@ with rate $r = 0.5$ in units of $1/\tau$, as for `ViscousRate`.
   particle spinning in place is not damped, while pure rolling is (the reverse of
   `ContactDamping`).
 - Without friction, `ContactDamping` and `ViscousRate` are normal-only. The two forms
-  are the CD and CD$_n$ models of [Vagberg2014]: "CD$_n$ is typically used in models
+  are the CD and CD<sub>n</sub> models of [Vagberg2014]: "CD<sub>n</sub> is typically used in models
   of massive dry granular particles [15]. CD was introduced by Durian [12] to describe
   the viscous interaction between massless foam bubbles." The choice changes the
   result: [Vagberg2014] "the rheology of soft-core frictionless disks is strongly
