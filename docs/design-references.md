@@ -14,7 +14,7 @@ transcribed. Notation: $\gamma$ is a dashpot coefficient (force per velocity), $
 damping rate ($1/\text{time}$, with $\gamma = m_\text{eff}\,r$), $\zeta$ a damping ratio,
 and $a$, $b$ the mass- and stiffness-proportional constants of the damping matrix,
 $\boldsymbol\Gamma = a\mathbf M + b\mathbf K$. The full derivations are in the
-[wiki](wiki/README.md), one page per section.
+[wiki](https://github.com/ColtonKawamura/SoftPack/wiki), one page per section.
 
 Status: design stage (no engine code yet). Last updated 2026-11-21. Every setting has
 a default and a reason (§0). Not designed yet: how `pack()` reaches the target

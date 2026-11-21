@@ -19,6 +19,13 @@ Planned features:
 
 Status: early development. Nothing is usable yet.
 
+## Documentation
+
+- [Design decisions](docs/design-references.md): every setting of `pack()`, its
+  default, and the sources behind it ([BibTeX](docs/references.bib)).
+- [Wiki](https://github.com/ColtonKawamura/SoftPack/wiki): one page per design
+  section, with the symbols defined, the formulas derived and the numbers worked out.
+
 ## License
 
 MIT, see `LICENSE`.
