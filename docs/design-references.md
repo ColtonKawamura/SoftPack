@@ -1005,7 +1005,7 @@ pack(rattlers = TwoContact(cone_test = true))
 pack(rattlers = ForceFloor(floor = 1e-3, cone_test = true))
 ```
 
-**Decision.** The option's default: contacts with force below
+**Decision.** The option: contacts with force below
 $10^{-3}\,\langle f\rangle$ count as broken, then particles with fewer than two
 contacts are removed.
 
