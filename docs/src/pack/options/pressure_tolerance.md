@@ -7,6 +7,8 @@
 
 **Default:** `1e-4`
 
+The pressure must be within this relative band of the target for every `convergence` choice, because the compression protocol checks it after every minimization.
+
 ## Choices
 
 | Choice | Default |

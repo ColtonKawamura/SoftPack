@@ -349,9 +349,10 @@ starting as the initial state. Repeat:
   minimization used its whole $2\times10^{6}$-step cap at the first contacts, with
   $P$ below $2\times10^{-17}$ (5 to 12 contacts). At the target the floor does not act:
   $\langle f_n\rangle \approx 1.1\times10^{-4}$ against $f_\text{floor} = 10^{-5}$.
-- The other `convergence` options are applied as written in §5 at the end of every
-  step. **SoftPack note.** Not probed: friction, drag, 3D, `DampedDynamics` and the other
-  `convergence` options.
+- The other `convergence` options end the minimization as §5 says, each deciding rest at
+  the trial box; the band above decides the rest. `RestartTest` runs its watch once, on
+  the trial that lies in the band, before it is returned. **SoftPack note.** Not probed:
+  friction, drag, 3D, `DampedDynamics` and the other `convergence` options.
 - `strain_step = 1e-2`: **SoftPack choice**. **SoftPack note.** On the worked example
   below (periodic) the compression steps and FIRE steps were 222 and 72 561 at
   $\epsilon = 0.003$, 88 and 67 242 at 0.01, 47 and 105 379 at 0.03, and 37 and 48 735 at
@@ -360,8 +361,9 @@ starting as the initial state. Repeat:
   output records (§11).
 - `StokesDrag(during = :compression)` (§8) is on in every minimization of this protocol,
   for velocity and spin together, and goes off when the pressure first lies within the
-  band. The run then minimizes once more with drag off until `convergence` holds. If the
-  pressure has left the band by then, the packing is returned with `converged = false`.
+  band. The run then minimizes once more with drag off until `convergence` holds, and
+  `RestartTest` (§5) then runs its watch. If the pressure has left the band by then, the
+  packing is returned with `converged = false`.
 - The state a restart needs (§6): the accepted state, $\epsilon$, the counts of accepted
   and rejected steps, and whether drag is on.
 - Worked example (**SoftPack note**; the initial state is from `StableRNG(1)` in Julia,
@@ -394,7 +396,8 @@ pack(friction = nothing)
 **Decision.** Frictionless contacts.
 
 - **SoftPack choice**. FIRE on a frictionless packing has a well-defined end state
-  (an energy minimum) and known checks (jamming packing fraction, $z \to 4$ in 2D);
+  (a stationary point of the energy, a minimum unless it is a saddle that `RestartTest`
+  (§5) can detect) and known checks (jamming packing fraction, $z \to 4$ in 2D);
   frictional packings depend on the preparation path (see §7). Friction models are
   in §13.
 
@@ -491,11 +494,25 @@ pack(mass = Density(1.0; shape = :disc))
 
 ## 5. Convergence (stopping) criterion
 
-One rule for frictionless and frictional packings: every particle's net force (and
-net torque, with friction) must be small compared with the typical contact force, and
-the pressure (§2) must be at its target. A run stops after `steps_max` steps at most.
-Options: `LeidenAcceleration`, `KineticEnergy`, `RestartTest`, or any function of the
-packing state that returns true when done.
+One rule for frictionless and frictional packings. A packing is accepted, and returned
+with `converged = true`, only when two things hold in the same state: the `convergence`
+option says it is at rest at the current box, and the pressure (§2) is within
+`pressure_tolerance` of the target. The option decides rest only, force balance or
+motion. The pressure check is part of no option: the compression protocol (§2) reads $P$
+after every minimization, so it applies to every option, a user function included. A run
+stops after `steps_max` steps at most. Options: `LeidenAcceleration`, `KineticEnergy`,
+`RestartTest`, or any function of the run state that returns true when the packing is at
+rest.
+
+- What each option does to the `RelativeForce` force test: `LeidenAcceleration` and a
+  user function replace it, and `KineticEnergy` and `RestartTest` add a check to it at
+  its defaults. **SoftPack choice.**
+- When the option is tested: at the end of every step, after the position and velocity
+  update, and at step 0 of a restart, so a converged packing restarted with the same
+  settings stops at once with `converged = true`. **SoftPack choice.**
+- A state whose velocities a FIRE reset has just zeroed is never tested, because zero
+  velocity would pass a motion test (wiki, Convergence criterion, "What a kinetic-energy
+  test measures").
 
 ```julia
 pack(convergence = RelativeForce(tolerance = 1e-8))
@@ -524,7 +541,8 @@ particle $i$, $\langle f_n\rangle$ is the mean normal contact force over all con
 - During the compression (§2) the same test ends the minimization after every step. Its
   scale $\langle f_n\rangle$ has a floor $P_\text{target}\,d^{D-1}/10$ there, because
   with no contact or a few contacts the test would never hold; at the target pressure
-  the floor does not act.
+  the floor does not act. With no contact $\langle f_n\rangle$ is $0/0$ and is read as
+  0, so the floor sets the scale and the test holds when every force is zero.
 
 ```julia
 pack(pressure_tolerance = 1e-4)
@@ -556,7 +574,8 @@ pack(convergence = LeidenAcceleration(tolerance = 1e-10))
 ```
 
 **Decision.** The option's default: every particle's acceleration below
-$10^{-10}$, the Leiden rule.
+$10^{-10}$, the Leiden rule. It replaces the force test, and the pressure check follows
+it.
 
 - [Somfai2005] "Our packings
   are considered to have converged to mechanical equilibrium when all grains have
@@ -568,23 +587,54 @@ $10^{-10}$, the Leiden rule.
 pack(convergence = KineticEnergy(tolerance = 1e-8))
 ```
 
-**Decision.** The option's default: with $\epsilon_K$ = `tolerance`, the mean kinetic
-energy per particle must satisfy $\frac{1}{N}\sum_i E_i^\text{kin} < \epsilon_K\,P\,d^{D}$
+**Decision.** The option's default: with $\epsilon_K$ = `tolerance`, the packing is at
+rest when the `RelativeForce` test (default tolerance $10^{-8}$) holds and the mean
+kinetic energy per particle satisfies
+$\frac{1}{N}\sum_i E_i^\text{kin} < \epsilon_K\,P_\text{target}\,d^{D}$
 ($N$ the number of particles, $d$ the small diameter, $D$ the dimension).
 
-- The [Agnolin2007] value above; [Xiong2019] stop each minimization on a maximum
-  per-disk kinetic energy.
+- The [Agnolin2007] value above, used together with a force bound as they do;
+  [Xiong2019] stop each minimization on a maximum per-disk kinetic energy.
+- It adds to the force test because it passed alone with unbalanced forces up to
+  $0.22\langle f_n\rangle$ in a FIRE probe (wiki, Convergence criterion). **SoftPack note.**
+- $P_\text{target}$ replaces the measured $P$: $P$ is 0 before the first contact, and at
+  the target the two agree to $\epsilon_P$. [Agnolin2007]'s $P$ is the prescribed value.
+- The force tolerance is that of `RelativeForce`'s default and has no keyword of its own;
+  another pair of tolerances is a user function. **SoftPack choice.**
 
 ```julia
 pack(convergence = RestartTest())
 ```
 
-**Decision.** The option: zero all velocities, then check that the kinetic energy and
-the unbalanced forces do not grow back. It has no settings.
+**Decision.** The option: the `RelativeForce` test (default tolerance) ends every
+minimization, and once, on the final packing, zero all velocities and check that the
+kinetic energy and the unbalanced forces do not grow back. It has no settings.
 
 - [Agnolin2007] "On setting all velocities to zero,
   it is observed that the sample does not regain kinetic energy beyond that value,
   while the unbalanced force level does not increase."
+- Once, because the watch needs about 2,100 steps on the probe packing (wiki, Convergence
+  criterion) and has no threshold that could end a minimization. **SoftPack choice.**
+- It runs after the force test and the pressure band hold with drag off (§2). If the
+  energy or the forces grow back, the packing is not accepted and the run continues from
+  the state where the watch ended. Every step of the watch counts toward `steps_max`.
+  **SoftPack choice.**
+- It is the check for saddles: a rest state is a stationary point of the energy, a
+  minimum unless it is a saddle, and no force test can tell the two apart.
+
+```julia
+pack(convergence = my_test)   # my_test(state) returns true when the packing is at rest
+```
+
+**Option.** Any function of the run state that returns true when the packing is at rest
+at the current box (**SoftPack choice**, so convergence tests are plug-ins like rattler
+rules, §9).
+
+- `state` is a read-only `RunState` (§11): the function cannot change the run, and a
+  write throws an error. **SoftPack choice.**
+- It is called at the end of every step, as for every option, so it should be cheap.
+- A `true` ends the current minimization, not the run: the pressure check of the
+  protocol (§2) follows, and `converged = true` still needs the pressure in the band.
 
 ## 6. A packing that does not converge
 
@@ -652,7 +702,8 @@ packing = pack(restart_packing = "packing.h5")  # continues where it stopped
   raises an error, because it would change the protocol halfway through and the
   packing would match neither setting. **SoftPack choice.**
 - A converged packing can be restarted too, for example with a tighter `convergence`
-  tolerance. The output records each restart (file and step).
+  tolerance. The test of §5 runs at step 0, so the same settings stop at once. The output
+  records each restart (file and step).
 
 ```julia
 pack(restart_file = nothing)
@@ -1272,6 +1323,19 @@ from them (`movie = Movie(path; every = interval)`).
 
 - **SoftPack choice**: both cost time and disk. `every` has no default: a useful
   interval depends on how long the run is.
+
+**State passed to a user function.** `convergence = my_test` (§5) receives a `RunState`,
+a read-only view of the run state (§6). **SoftPack choice**, and the names are mine.
+
+- Per particle: `positions`, `velocities`, `rotations`, `spins`, `diameters` and
+  `masses`.
+- Per particle, from the contacts: `forces` and `torques`, the net elastic force and
+  torque ($\mathbf F_i$, $\mathbf T_i$ of §5; dashpot and drag forces are not included).
+- Per contact: the two particle indices (the wall for a wall contact), `overlaps`,
+  `normal_forces` and `tangential_forces`.
+- The box: its side `L` and its `boundary` (§2).
+- The run: `pressure` ($P$ of §2), `step` (counted from the start of the packing, as in §6)
+  and `settings`.
 
 ## 12. Time step
 

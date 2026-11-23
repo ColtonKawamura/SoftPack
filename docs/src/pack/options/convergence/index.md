@@ -7,6 +7,8 @@
 
 When to stop.
 
+Each choice decides when the packing is at rest at the current box, and [`pressure_tolerance`](../pressure_tolerance.md) is checked after every one of them. `LeidenAcceleration()` and your own function replace the force test of `RelativeForce()`, and `KineticEnergy()` and `RestartTest()` add a check to it at its defaults.
+
 **Default:** `RelativeForce()`
 
 ## Choices

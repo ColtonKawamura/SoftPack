@@ -126,8 +126,8 @@ With friction on, the friction models' own defaults:
 
 | Setting | Default | Meaning | Other choices | Main source | Details |
 |:---|:---|:---|:---|:---|:---|
-| `convergence` | `RelativeForce(tolerance = 1e-8)` | $\max_i \lvert\mathbf F_i\rvert < \epsilon_F\langle f_n\rangle$ and, with friction, $\max_i \lvert\mathbf T_i\rvert < \epsilon_F\langle f_n\rangle\langle d\rangle$, with $\epsilon_F = 10^{-8}$ | `LeidenAcceleration(tolerance = 1e-10)`, `KineticEnergy(tolerance = 1e-8)`, `RestartTest()`, any function | [Agnolin2007], [Gilabert2007] | [`convergence`](options/convergence/index.md) |
-| `pressure_tolerance` | `1e-4` | $\lvert P - P_\text{target}\rvert \le \epsilon_P P_\text{target}$, $\epsilon_P = 10^{-4}$ | any value | [Agnolin2007] | [`pressure_tolerance`](options/pressure_tolerance.md) |
+| `convergence` | `RelativeForce(tolerance = 1e-8)` | $\max_i \lvert\mathbf F_i\rvert < \epsilon_F\langle f_n\rangle$ and, with friction, $\max_i \lvert\mathbf T_i\rvert < \epsilon_F\langle f_n\rangle\langle d\rangle$, with $\epsilon_F = 10^{-8}$ (the rest test only; the pressure row below applies to every option) | `LeidenAcceleration(tolerance = 1e-10)`, `KineticEnergy(tolerance = 1e-8)`, `RestartTest()`, any function | [Agnolin2007], [Gilabert2007] | [`convergence`](options/convergence/index.md) |
+| `pressure_tolerance` | `1e-4` | $\lvert P - P_\text{target}\rvert \le \epsilon_P P_\text{target}$, $\epsilon_P = 10^{-4}$, checked after any `convergence` option | any value | [Agnolin2007] | [`pressure_tolerance`](options/pressure_tolerance.md) |
 | `steps_max` | `10^7` | at most $10^7$ steps per call | any value | **SoftPack choice** | [`steps_max`](options/steps_max.md) |
 | `failure_action` | `:warn` | warn and return the packing with `converged = false` | `:error` | **SoftPack choice** | [`failure_action`](options/failure_action.md) |
 | `restart_packing` | `nothing` | start from scratch | path to a file written by `write_packing` | [LAMMPSreadrestart] (precedent) | [`restart_packing`](options/restart_packing.md) |
