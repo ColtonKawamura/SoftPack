@@ -7,7 +7,9 @@ Status: design stage (no engine code yet).
 
 `pack()` with no arguments makes a 2D packing of 256 frictionless Hookean disks, a
 50:50 bidisperse mixture with diameter ratio 1.4, compressed with FIRE to the pressure
-$P = 10^{-4}$, with rattlers removed. Every setting below has a default and a reason.
+$P = 10^{-4}$, with rattlers removed. It starts from random, non-touching particles at
+packing fraction 0.25 in a periodic box and shrinks the box isotropically until the
+pressure reaches the target. Every setting below has a default and a reason.
 This page lists them all in one place: the default, what it means as an equation, the
 other choices, the main source, and the wiki section that explains it. Sources are
 cited by key and listed in full at the end; **SoftPack choice** marks a default with no
@@ -36,6 +38,11 @@ pack(                                                                # run the p
     friction                    = nothing,                           # frictionless contacts
     mass                        = EqualMass(1.0),                    # every particle has mass 1
     target                      = Pressure(1e-4),                    # compress until the contact pressure reaches 1e-4
+    boundary                    = Periodic(),                        # periodic square (2D) or cube (3D) box
+    initial_state               = Dilute(packing_fraction = 0.25),   # random start at packing fraction 0.25, no particles touching
+    protocol                    = IsotropicCompression(              # shrink the box in isotropic steps
+        strain_step = 1e-2                                           # the box side shrinks by 1% in the first step
+    ),                                                               # end of IsotropicCompression call
     convergence                 = RelativeForce(tolerance = 1e-8),   # stop when net forces are below 1e-8 of the mean contact force
     pressure_tolerance          = 1e-4,                              # relative pressure tolerance
     steps_max                   = 10^7,                              # maximum number of steps per call
@@ -57,6 +64,7 @@ which writes HDF5 ([file format](../write_packing/path.md)).
 - `pack(...)` — runs the packing with every default written out.
 - Each keyword is explained in the tables below: its default, meaning, other choices, main source and a link to the section with the reasons.
   - Particles, contacts, mass and target: [Particles and contacts](#Particles-and-contacts).
+  - Box, start and compression: [Box, start and compression](#Box,-start-and-compression).
   - Convergence, failure and restarts: [Stopping, failure and restarts](#Stopping,-failure-and-restarts).
   - Algorithm and time step: [Algorithm and time step](#Algorithm-and-time-step).
   - Damped dynamics: [Damping (damped dynamics)](#Damping-(damped-dynamics)).
@@ -105,6 +113,14 @@ With friction on, the friction models' own defaults:
 |:---|:---|:---|:---|:---|
 | `CundallStrack(friction_coefficient = 0.5, stiffness_ratio = :matched)` | $\mu = 0.5$, $k_t/k_n = 1/(1 + mR^2/I)$ | linear tangential spring capped at $\lvert F_t^\text{el}\rvert \le \mu F_n^\text{el}$; $k_t/k_n = 1/3$ for disks, $2/7$ for spheres | [Somfai2005], [Silbert2001]; [Santos2024] for the model | [`CundallStrack()`](options/friction/CundallStrack.md) |
 | `Mindlin(friction_coefficient = 0.5, poisson_ratio = 0.0)` | $\mu = 0.5$, $\nu = 0$ | Hertz–Mindlin tangential force (needs `Hertzian`); $\nu = 0$ gives $k_t = k_n$ | [Somfai2005], [Shundyak2007] | [`Mindlin()`](options/friction/Mindlin.md) |
+
+## Box, start and compression
+
+| Setting | Default | Meaning | Other choices | Main source | Details |
+|:---|:---|:---|:---|:---|:---|
+| `boundary` | `Periodic()` | periodic square (2D) or cube (3D) box of side $L$, every side scaled by the same factor | `Walls(friction = true)`: rigid flat walls, with the `contact` law and, when `friction` is set, its friction model; `Walls(friction = false)` for normal forces only | [Agnolin2007] (periodic cell); **SoftPack choice** (square or cube, walls) | [`boundary`](options/boundary/index.md) |
+| `initial_state` | `Dilute(packing_fraction = 0.25)` | random particles at $\varphi_0 = 0.25$, at rest, placed by random sequential addition so that none touches | any $\varphi_0$ at which the particles fit | [Agnolin2007] (loose start); **SoftPack choice** (value) | [`initial_state`](options/initial_state/index.md) |
+| `protocol` | `IsotropicCompression(strain_step = 1e-2)` | shrink the box by 1% per step and minimize; accept a step below the pressure band, reject and halve the step above it | any `strain_step` | **SoftPack choice** | [`protocol`](options/protocol/index.md) |
 
 ## Stopping, failure and restarts
 
@@ -186,12 +202,6 @@ The options' sources: `TwoContact` [Ishima2023], `ForceFloor` [Shundyak2007],
 | `write_packing` `rattlers_file` | `false` | the file holds the packing without rattlers only | `true`: a second file with every particle | **SoftPack choice** | [`rattlers_file`](../write_packing/rattlers_file.md) |
 | `write_packing` `compression` | `nothing` | uncompressed, so datasets can be memory-mapped | `:gzip` (level 4) | [HDF5jl], [h5py] | [`compression`](../write_packing/compression.md) |
 | `snapshots`, `movie` | `nothing`, `nothing` | nothing recorded during the run | `Snapshots(every = interval)`, `Movie(path; every = interval)` | **SoftPack choice** | [`snapshots`](options/snapshots/index.md), [`movie`](options/movie/index.md) |
-
-## Not designed yet
-
-How `pack()` reaches the target pressure (the initial state and the compression
-protocol) is the one part of the design with no default yet
-([design doc, status line](https://github.com/ColtonKawamura/SoftPack/blob/main/docs/design-references.md)).
 
 ## References
 

@@ -16,9 +16,9 @@ and $a$, $b$ the mass- and stiffness-proportional constants of the damping matri
 $\boldsymbol\Gamma = a\mathbf M + b\mathbf K$. The full derivations are in the
 [wiki](https://github.com/ColtonKawamura/SoftPack/wiki), one page per section.
 
-Status: design stage (no engine code yet). Last updated 2026-11-21. Every setting has
-a default and a reason (§0). Not designed yet: how `pack()` reaches the target
-pressure (initial state and compression protocol).
+Status: design stage (no engine code yet). Last updated 2026-11-23. Every setting has
+a default and a reason (§0), including how `pack()` reaches the target pressure
+(the boundary, the initial state and the compression protocol, §2).
 
 ---
 
@@ -37,6 +37,9 @@ reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
 | `friction` | `nothing` (frictionless) | `CundallStrack(friction_coefficient = 0.5, stiffness_ratio = :matched)`, `Mindlin(friction_coefficient = 0.5, poisson_ratio = 0.0)` | 2, 13 |
 | `mass` | `EqualMass(1.0)` | `Density(1.0; shape = :disc)` (`:sphere` in 3D) | 4 |
 | `target` | `Pressure(1e-4)` | | 2 |
+| `boundary` | `Periodic()` | `Walls(friction = true)` (rigid flat walls), `Walls(friction = false)` | 2 |
+| `initial_state` | `Dilute(packing_fraction = 0.25)` | any packing fraction at which the particles fit | 2 |
+| `protocol` | `IsotropicCompression(strain_step = 1e-2)` | any `strain_step` | 2 |
 | `convergence` | `RelativeForce(tolerance = 1e-8)` | `LeidenAcceleration(tolerance = 1e-10)`, `KineticEnergy(tolerance = 1e-8)`, `RestartTest()`, any function | 5 |
 | `pressure_tolerance` | `1e-4` | any value | 5 |
 | `steps_max` | `10^7` | any value | 5 |
@@ -96,7 +99,9 @@ names (`find_rattlers`, `write_packing`).
 
 The default packing is 2D, with 256 particles in a 50:50 bidisperse mixture of
 diameter ratio 1.4, frictionless Hookean contacts of stiffness 1, a target pressure of
-$10^{-4}$, and FIRE. `pack()` with no arguments uses all of them.
+$10^{-4}$, and FIRE. `pack()` with no arguments uses all of them. It starts from random,
+non-touching particles at packing fraction 0.25 in a periodic square box and shrinks the
+box isotropically, minimizing after every step, until the pressure reaches the target.
 
 ```julia
 pack(dimension = 2)
@@ -237,6 +242,140 @@ spheres, so only the normal force $f_n^{c}$ contributes.
   (overlaps of about $10^{-4}$ of a diameter, see `stiffness` above). Frictional
   jamming studies span pressures from $10^{-6}$ to $10^{-3}$ [Henkes2010]
   (Hertz-Mindlin particles, so their pressure unit differs from ours).
+
+```julia
+pack(boundary = Periodic())
+```
+
+**Decision.** The box is a square (2D) or a cube (3D) of side $L$, and its boundaries are
+periodic. `Walls(friction = true)` is the option for a non-periodic packing: a flat, rigid
+wall on every side of the box.
+
+- Periodic is the default because it leaves no surface layer, as in the standard
+  assembling studies: [Agnolin2007] "enclosed in a cubic or parallelipipedic cell with
+  periodic boundary conditions". **SoftPack choice** for the square or cube:
+  [Agnolin2007] let the cell lengths $L_\alpha$ vary separately, and SoftPack scales
+  every side by the same factor, so the compression is isotropic by construction (no
+  change of aspect, no shear).
+- `Walls`: a particle whose center is a distance $h$ from a wall overlaps it by
+  $\delta = d_i/2 - h$. While $\delta > 0$ the wall pushes it along the wall normal with
+  the `contact` law above ($f = k\delta$ for `Hookean`). **SoftPack choice**: the wall
+  is a flat surface of infinite mass with the same law and stiffness as a
+  particle-particle contact; a separate wall law may be added later. The effective mass
+  of a wall contact is $m_i$, where a pair has the reduced mass $m_i m_j/(m_i + m_j)$.
+- `friction = true`, the `Walls` default: with `friction` set (§13), a wall contact has
+  the same friction model and coefficients as a particle-particle contact, and its own
+  tangential spring. `Walls(friction = false)` makes wall contacts carry the normal force
+  only. With `friction = nothing` the walls are frictionless either way.
+  **SoftPack choice.**
+- The pressure below needs no extra term: a wall contact counts like a pair contact, with
+  $\ell^{c} = h$, the distance from the particle's center to the wall, and $V = L^{D}$.
+  At force balance the sum equals the mean wall pressure, from the sum of the wall
+  contact forces $f_n^{c}$ over the $2D$ walls of area $L^{D-1}$,
+
+$$P = \frac{1}{D\,V}\left(\sum_{\text{pairs}} f_n^{c}\,\ell^{c} + \sum_{\text{walls}} f_n^{c}\,h^{c}\right) = \frac{1}{2D\,L^{D-1}}\sum_{\text{walls}} f_n^{c}.$$
+
+  **SoftPack note.** It follows from $\sum_i \mathbf r_i\cdot\mathbf F_i = 0$ with the
+  origin in a corner. Checked on the walls packing of the worked example below: the two
+  forms agree to $4\times10^{-10}$ relative, and the pair sum alone is 6.4% too low
+  (the 50 wall contacts carry a share of the pressure).
+- Not designed yet for `Walls`: whether a wall contact counts toward the contact number
+  of the rattler rules (§9), and the tangential effective mass at a wall (§8).
+
+```julia
+pack(initial_state = Dilute(packing_fraction = 0.25))
+```
+
+**Decision.** Start from random, non-touching particles at a low packing fraction
+$\varphi_0$ = `packing_fraction`, all at rest. No two particles overlap, so every force
+and the pressure are zero at the start.
+
+- A loose start is the usual one: [Agnolin2007] "Numerical samples are most often
+  produced by compression of an initially loose configuration (a granular gas) in which
+  the grains do not touch."
+- The box side is $L_0 = \left(\sum_i v(d_i)/\varphi_0\right)^{1/D}$, with $v(d)$ the
+  particle area or volume of the packing fraction above.
+- Positions come from random sequential addition. Particles are placed in order of
+  decreasing diameter (equal diameters in index order). A trial position is drawn
+  uniformly in the box and kept only if the gap to every placed particle is positive,
+  $r_{ij} > (d_i + d_j)/2$; otherwise it is drawn again. A trial draws one number
+  $u_a \in [0, 1)$ per axis, in the order $x$, $y$, $z$, with `rand(rng)`, and puts the
+  center at $u_a L_0$ along axis $a$ (periodic) or at $d_i/2 + u_a\,(L_0 - d_i)$ (walls).
+  After $10^4$ failed trials for one particle `pack()` throws an `ArgumentError` that
+  asks for a lower `packing_fraction`.
+- The draws of a run, in order (§10): the diameters (§3; none when `particles_diameters`
+  is given), then the trials above. Nothing else in `pack()` is random.
+- Largest first: **SoftPack choice**, so the particles that need the most room are placed
+  while there is room.
+- All at rest: **SoftPack choice**. Nothing moves until the first compression step makes
+  a force.
+- $\varphi_0 = 0.25$: **SoftPack choice**, low enough that every start is quick and
+  non-touching. **SoftPack note.** In a Python test (256 particles, 50:50 mixture of 1.0
+  and 1.4, seeds 1 to 5, NumPy's generator) every placement finished at $\varphi_0 = 0.25$,
+  with at most 14 trials for any one particle in 2D (periodic or walls) and at most 169
+  in 3D, and about 2 trials per particle on average in 2D. Placements still finished up
+  to $\varphi_0 = 0.55$ in 2D and 0.30 in 3D under the $10^4$ cap.
+
+```julia
+pack(protocol = IsotropicCompression(strain_step = 1e-2))
+```
+
+**Decision.** Compress the box in isotropic steps until the pressure is within
+`pressure_tolerance` of the target (§5). Call $\epsilon$ the step, starting at
+`strain_step`, and the accepted state the box side $L_a$ and positions $\mathbf r_{a,i}$,
+starting as the initial state. Repeat:
+
+1. Trial. Set $L = (1 - \epsilon)\,L_a$ and $\mathbf r_i = (1 - \epsilon)\,\mathbf r_{a,i}$
+   (the walls move with the box), with every velocity zero.
+2. Minimize at this $L$ with `algorithm`, from rest with its counters reset, until
+   `convergence` holds (§5).
+3. Read $P$ (§2). Within the band, which is
+   $\lvert P - P_\text{target}\rvert \le \epsilon_P\,P_\text{target}$: done, and the trial
+   is the returned packing. Below the band: the trial becomes the accepted state. Above
+   the band: the trial is rejected, $\epsilon \to \epsilon/2$, and the step starts again
+   from the same accepted state.
+
+- **SoftPack choice** for the rule. It needs only the target and `pressure_tolerance`,
+  gives the same steps for the same inputs, and approaches the target from below, since
+  the accepted state always lies below the band. $\epsilon$ is not enlarged again.
+- Every minimization counts toward `steps_max` (§5). A run that reaches it, or one
+  whose $\epsilon$ falls below $10^{-14}$, is returned with `converged = false` (§6).
+- Force floor. With no contact, $\langle f_n\rangle = 0$ and the test of
+  `RelativeForce` (§5) can never hold; with a few contacts $\langle f_n\rangle$ is
+  tiny and the test asks for forces below round-off. So `RelativeForce` reads
+  $\max_i \lvert\mathbf F_i\rvert < \epsilon_F \max(\langle f_n\rangle, f_\text{floor})$
+  with $f_\text{floor} = P_\text{target}\,d^{D-1}/10$, and the same floor times
+  $\langle d\rangle$ for torques. **SoftPack note.** Without the floor the probe's
+  minimization used its whole $2\times10^{6}$-step cap at the first contacts, with
+  $P$ below $2\times10^{-17}$ (5 to 12 contacts). At the target the floor does not act:
+  $\langle f_n\rangle \approx 1.1\times10^{-4}$ against $f_\text{floor} = 10^{-5}$.
+- The other `convergence` options are applied as written in §5 at the end of every
+  step. **SoftPack note.** Not probed: friction, drag, 3D, `DampedDynamics` and the other
+  `convergence` options.
+- `strain_step = 1e-2`: **SoftPack choice**. **SoftPack note.** On the worked example
+  below (periodic) the compression steps and FIRE steps were 222 and 72 561 at
+  $\epsilon = 0.003$, 88 and 67 242 at 0.01, 47 and 105 379 at 0.03, and 37 and 48 735 at
+  0.1: the cost has no clear trend in $\epsilon$. The end packing changes with it,
+  $\varphi$ from 0.8358 to 0.8417 with no trend, so `strain_step` is a setting that every
+  output records (§11).
+- `StokesDrag(during = :compression)` (§8) is on in every minimization of this protocol,
+  for velocity and spin together, and goes off when the pressure first lies within the
+  band. The run then minimizes once more with drag off until `convergence` holds. If the
+  pressure has left the band by then, the packing is returned with `converged = false`.
+- The state a restart needs (§6): the accepted state, $\epsilon$, the counts of accepted
+  and rejected steps, and whether drag is on.
+- Worked example (**SoftPack note**; the initial state is from `StableRNG(1)` in Julia,
+  the compression is a Python probe with FIRE 2.0, not SoftPack code). The 256 particles
+  have total area 297.57, so $L_0 = 34.50$ at $\varphi_0 = 0.25$. Periodic: 493 trials
+  (at most 19 for one particle, smallest gap $1.8\times10^{-3}$); the first contact
+  appears at compression step 45 ($\varphi = 0.618$); the packing is within the band at
+  step 88 (70 accepted, 18 rejected; 67 242 FIRE steps in all), at $L = 18.825$,
+  $\varphi = 0.8397$, $P = 1.0001\times10^{-4}$, 501 contacts ($z = 3.91$ before any
+  rattler is removed), $\langle f_n\rangle = 1.149\times10^{-4}$ and a largest net force
+  of $1.1\times10^{-12}$, below $\epsilon_F\langle f_n\rangle = 1.15\times10^{-12}$. Walls:
+  514 trials; within the band at step 82 (64 accepted, 18 rejected; 62 411 FIRE steps),
+  at $L = 19.158$, $\varphi = 0.8108$ (the box holds a wall layer), 442 pair and 50 wall
+  contacts.
 
 ```julia
 pack(algorithm = FIRE())
@@ -382,6 +521,10 @@ particle $i$, $\langle f_n\rangle$ is the mean normal contact force over all con
   **SoftPack choice**.
 - `tolerance = 1e-8`, tighter than the $10^{-4}$ above: provisional **SoftPack
   choice**, to be timed on frictional packings.
+- During the compression (§2) the same test ends the minimization after every step. Its
+  scale $\langle f_n\rangle$ has a floor $P_\text{target}\,d^{D-1}/10$ there, because
+  with no contact or a few contacts the test would never hold; at the target pressure
+  the floor does not act.
 
 ```julia
 pack(pressure_tolerance = 1e-4)
@@ -479,9 +622,11 @@ packing = pack(restart_packing = "packing.h5")  # continues where it stopped
   system configuration from a restart file. This allows continuation of a previous
   run."
 - Everything needed is in the file (§11): every particle, including rattlers; positions,
-  velocities, rotations and spins; the contact history (tangential springs); the box;
+  velocities, rotations and spins; the contact history (tangential springs, wall contacts included); the box and its boundary;
   the algorithm's internal state (FIRE's current step and mixing coefficient and its
-  counters); the state of the compression protocol; the step count; every setting; and
+  counters); the state of the compression protocol (§2: the accepted state, the strain
+  step, the counts of accepted and rejected steps, and whether drag is on); the step
+  count; every setting; and
   the SoftPack and Julia versions. A restart needs no other input. LAMMPS does not do
   this: [LAMMPSwriterestart] "Although the purpose of restart files is to enable
   restarting a simulation from where it left off, not all information about a
@@ -918,8 +1063,10 @@ Rayleigh damping (channels above).
   particle decay at the same rate. Set it separately as [Shimada2026] do.
 - `during = :always`: drag on for the whole run, as in [Shimada2026] and
   [Xiong2019].
-- `during = :compression`: drag on until the pressure is within `pressure_tolerance`
-  of the target, then off, and the packing settles under contact damping alone. The
+- `during = :compression`: drag on, for velocity and spin together, in every
+  minimization of the compression protocol (§2) until the pressure is first within
+  `pressure_tolerance` of the target, then off, and the packing settles under contact
+  damping alone. The
   Leiden packings are made with drag that is later removed: [Somfai2007] "The
   packings are constructed by cooling while slowly inflating the particle radii in
   the presence of a linear damping force", and "Once a packing is made, the
@@ -1033,7 +1180,9 @@ pack(seed = 1)
 
 **Decision.** Seeds use StableRNGs.jl so a seed gives the same packing on every
 Julia version; every output records the SoftPack version, git commit, Julia version,
-seed and RNG. The default seed is 1.
+seed and RNG. The default seed is 1. One generator, created from the seed, makes every
+draw, in this order: the diameters (§3), then the positions of the initial state (§2).
+Nothing after that is random.
 
 - `seed = 1`: **SoftPack choice**, so `pack()` with no arguments gives the same
   packing every time.

@@ -21,6 +21,16 @@ Who the particles are and how they touch.
 | [`mass`](mass/index.md) | the particle masses | `EqualMass()` | [`EqualMass()`](mass/EqualMass.md), [`Density()`](mass/Density.md) |
 | [`target`](target/index.md) | the pressure the compression runs to | `Pressure(1e-4)` | [`Pressure()`](target/Pressure.md) |
 
+## Box, start and compression
+
+The box and its boundary, the particles' starting positions, and how the box is shrunk to the target pressure.
+
+| Keyword | Sets | Default | Choices |
+|:---|:---|:---|:---|
+| [`boundary`](boundary/index.md) | periodic boundaries or rigid walls | `Periodic()` | [`Periodic()`](boundary/Periodic.md), [`Walls()`](boundary/Walls.md) |
+| [`initial_state`](initial_state/index.md) | where the compression starts | `Dilute(packing_fraction = 0.25)` | [`Dilute()`](initial_state/Dilute.md) |
+| [`protocol`](protocol/index.md) | how the box is compressed | `IsotropicCompression(strain_step = 1e-2)` | [`IsotropicCompression()`](protocol/IsotropicCompression.md) |
+
 ## Stopping, failure and restarts
 
 When a run stops, what happens if it does not converge, and how to continue it.

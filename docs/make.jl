@@ -48,6 +48,19 @@ makedocs(;
                     "Overview" => "pack/options/target/index.md",
                     "`Pressure()`" => "pack/options/target/Pressure.md",
                 ],
+                "`boundary`" => [
+                    "Overview" => "pack/options/boundary/index.md",
+                    "`Periodic()`" => "pack/options/boundary/Periodic.md",
+                    "`Walls()`" => "pack/options/boundary/Walls.md",
+                ],
+                "`initial_state`" => [
+                    "Overview" => "pack/options/initial_state/index.md",
+                    "`Dilute()`" => "pack/options/initial_state/Dilute.md",
+                ],
+                "`protocol`" => [
+                    "Overview" => "pack/options/protocol/index.md",
+                    "`IsotropicCompression()`" => "pack/options/protocol/IsotropicCompression.md",
+                ],
                 "`convergence`" => [
                     "Overview" => "pack/options/convergence/index.md",
                     "`RelativeForce()`" => "pack/options/convergence/RelativeForce.md",
