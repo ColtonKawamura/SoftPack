@@ -50,6 +50,7 @@ reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
 | `timestep` | `CollisionTime(fraction = 1/50)` | any fraction, or a fixed number | 12 |
 | `DampedDynamics` `damping` | `ContactDamping(normal = 0.98, tangential = 0.98)` | other ratios, `ViscousRate(normal = 0.5, tangential = 0.5)`, `RelativeVelocityDamping(rate = 0.5)`, `nothing` | 8 |
 | `DampedDynamics` `drag` | `nothing` | `StokesDrag(velocity = rate)`, with `spin` and `during` | 8 |
+| `DampedDynamics` `integrator` | `:centered_velocity_verlet` | `:lagged_velocity_verlet`, `:semi_implicit_euler` | 8 |
 | `FIRE` `damping`, `drag` | `nothing`, `nothing` | same as `DampedDynamics` | 8 |
 | FIRE parameters | LAMMPS FIRE 2.0 defaults | any value | 14 |
 | `rattlers` | `ContactCount(cone_test = true)` | `TwoContact()`, `ForceFloor(floor = 1e-3)`, `Unresolved(floor = :tolerance)`, `nothing`, any function | 9 |
@@ -690,8 +691,12 @@ packing = pack(restart_packing = "packing.h5")  # continues where it stopped
   velocities, which are used at half-step values every timestep when forces are
   computed. When a run restarts, forces are initially evaluated with a full-step
   velocity, which is different than if the run had continued." SoftPack's dashpots
-  depend on velocity too, so the file stores the integrator's half-step state.
-  **SoftPack choice.**
+  depend on velocity too, so the file records which `DampedDynamics` integrator wrote it
+  and stores that integrator's state (§8, "Integrator"). The lagged velocity Verlet
+  stores the forces and torques of the last evaluation, because they were built from a
+  half-step velocity and cannot be rebuilt from the stored positions and velocities;
+  the centered velocity Verlet and the semi-implicit Euler store only positions and
+  velocities. The exact-continuation test runs for each integrator. **SoftPack choice.**
 - On a different SoftPack or Julia version the restart runs but warns that it may not
   be exact, as LAMMPS does: [LAMMPSreadrestart] "Several things can prevent exact
   restarts due to round-off effects, in which case the trajectories in the 2 runs will
@@ -700,7 +705,8 @@ packing = pack(restart_packing = "packing.h5")  # continues where it stopped
   counted from the restart), `failure_action`, `convergence`, `restart_file`,
   `snapshots` and `movie`, e.g. `pack(restart_packing = "packing.h5", steps_max = 2 * 10^7)`. Any other keyword
   raises an error, because it would change the protocol halfway through and the
-  packing would match neither setting. **SoftPack choice.**
+  packing would match neither setting. This includes `integrator`: a file written with
+  one integrator is refused by a run that asks for another. **SoftPack choice.**
 - A converged packing can be restarted too, for example with a tighter `convergence`
   tolerance. The test of §5 runs at step 0, so the same settings stop at once. The output
   records each restart (file and step).
@@ -767,6 +773,9 @@ but documented as non-standard. The algorithm defaults to `FIRE()` (§2).
   fraction of fully mobilized contacts): "Our simulations indicate that this relation
   depends significantly on the preparation method of the sample, where packings
   prepared with higher viscous damping have larger n_m"; see also [Santos2024].
+- `DampedDynamics` has an `integrator` setting with three values, and the default is
+  the centered velocity Verlet (§8, "Integrator"). FIRE's integrator is a separate
+  setting (§14).
 
 ## 8. Damping
 
@@ -1132,21 +1141,80 @@ pack(algorithm = DampedDynamics(drag = StokesDrag(velocity = 0, spin = rate)))
 rolling over another has no sliding speed at the contact), so runs with friction that
 stall on rolling motion can add a small spin drag. **SoftPack note.**
 
+### Integrator
+
+```julia
+pack(algorithm = DampedDynamics(integrator = :centered_velocity_verlet))
+```
+
+**Decision.** `DampedDynamics` takes an `integrator` with three values, and the default
+is the centered velocity Verlet. A dashpot force depends on velocity, but at the end of a
+step the velocity $\mathbf v_{n+1}$ is only known after the force that determines it.
+The three values differ in which velocity the dashpot uses. FIRE's integrator is a
+separate setting (§14).
+
+| Value | Dashpot force uses | Cost per step | Stable step, one damped oscillator | Restart stores |
+|---|---|---|---|---|
+| `:centered_velocity_verlet` (default) | end-of-step velocity $\mathbf v_{n+1}$ (implicit) | a linear solve over the contacts | $\omega\,\Delta t \le 2$ at every $\zeta$ | positions, velocities |
+| `:lagged_velocity_verlet` | half-step velocity $\mathbf v_{n+1/2}$ (explicit) | one force evaluation | $\omega\,\Delta t \le 2\left(\sqrt{1+\zeta^2}-\zeta\right)$ | positions, velocities, forces and torques of the last evaluation |
+| `:semi_implicit_euler` | previous velocity $\mathbf v_n$ (explicit) | one force evaluation | the same as lagged | positions, velocities |
+
+- Each value has its own page with the steps and equations: [centered](https://github.com/ColtonKawamura/SoftPack/wiki/Centered-velocity-Verlet), [lagged](https://github.com/ColtonKawamura/SoftPack/wiki/Lagged-velocity-Verlet), [semi-implicit Euler](https://github.com/ColtonKawamura/SoftPack/wiki/Semi-implicit-Euler-for-DampedDynamics).
+- Why centered is the default: of the three it is the most accurate, and its stable step does not shrink as damping grows. **SoftPack choice.**
+  - One damped oscillator (our test, 2026-11-24; measured against the exact solution): the centered form converges at second order at $\zeta = 0.01$, $0.05$, $0.3$ and $0.98$.
+  - The lagged form and the semi-implicit Euler converge at first order at $\zeta = 0.3$ and $0.98$, with nearly the same error; the lagged form is better than the Euler only at weak damping ($\zeta \le 0.05$).
+  - The measured stable steps of the lagged form and the Euler agree with the formula above at $\zeta = 0.3$, 0.7, 0.98 and 2.
+  - Its restart needs only positions and velocities, as for the Euler.
+- The lagged form is how LAMMPS evaluates granular dashpots: [LAMMPSreadrestart] "the forces they compute depend on atom velocities, which are used at half-step values every timestep when forces are computed."
+- The stable-step formula of the lagged form is the central-difference result with the damping term lagged: the Code_Aster manual [CodeAster] (§6.2) gives "Δt < 2/ωmax (√(1+ξ²) − ξ)" with ξ the damping ratio, and says the same lagged approximation is valid for weak damping and loses second-order accuracy when damping is large (our translation from the French). [NAFEMSstable] on damping and the stable increment: "one might be tempted to think that it can increase the critical time increment, but we will show that it is not the case, rather the opposite."
+- Velocity Verlet with a velocity-dependent force is first order: [Golshan2023] "When the force depends on the velocity ... the scheme is first-order accurate for both position and velocity", and still more accurate than the explicit Euler in practice.
+- The cost of the centered form: it needs a linear solve over the contacts every step, $\left(\mathbf M + \tfrac{\Delta t}{2}\boldsymbol\Gamma\right)\mathbf v_{n+1} = \mathbf M\mathbf v_{n+1/2} + \tfrac{\Delta t}{2}\mathbf F(\mathbf r_{n+1})$. [Samiei2013] find in DEM that "though the implicit integration enables larger time steps ... the overall speed up is overruled by higher computational costs of the implicit method". **SoftPack note**: the default is to be checked against the cost on packings (a benchmark is planned); if the solve dominates, the default changes.
+- The half-step state is defined per integrator. Only the lagged form has one: the forces and torques of the last evaluation, because they used $\mathbf v_{n-1/2}$. For the other two, the forces and torques are a function of the stored positions, velocities and contact history, and a restart recomputes them. The exact-continuation test (§6) runs for each integrator, and a failure means a piece of state is missing. **SoftPack choice.**
+- Failure mechanism: each integrator blows up when $\Delta t$ exceeds its stable step. The lagged form and the Euler lose stable step as damping grows; the centered form does not. The run-time check of §12 compares $\Delta t$ with the stable step of the chosen integrator and warns; it does not change the step.
+- We did not find a paper that compares these three for relaxing jammed packings with contact dashpots (a few searches, 2026-11-24). Related work: [Rougier2004], [Hanley2016], [Vyas2025] and [deKlerk2022] on DEM integrators, and [Martys1999] and [GronbechJensen2013] on Verlet schemes with velocity-dependent or linear friction forces. A benchmark of the three is planned for the SoftPack paper.
+
 ### Time step with damping
 
-An explicit integrator's stable step shrinks as damping grows. For one damped
-oscillator of angular frequency $\omega$ and damping ratio $\zeta$,
+The stable step depends on the integrator (§8, "Integrator"). For one damped oscillator
+of angular frequency $\omega$ and damping ratio $\zeta$, the default centered form is
+stable up to
 
-$$\omega\,\Delta t \le 2\left(\sqrt{1+\zeta^2} - \zeta\right).$$
+$$
+\omega\,\Delta t
+ \le
+\underbrace{
+2
+}_\text{no damping penalty}
+$$
+
+and the lagged form and the Euler up to
+
+$$
+\omega\,\Delta t
+ \le
+\underbrace{
+2
+}_\text{undamped limit}
+\underbrace{
+\left(\sqrt{1+\zeta^2} - \zeta\right)
+}_\text{damping shrinks it}
+$$
 
 With the defaults ($\zeta = 0.98$) a single contact is stable up to about
-$0.27\,t_\text{col}$, 13 times the default step $t_\text{col}/50$ (§12). In a packing
-the fastest vibration can be up to $\sqrt{z}$ times faster than one contact ($z$ the
-contact number), and contact damping then damps it more strongly too. The worst case
-is about $0.08\,t_\text{col}$ in 2D ($z = 4$) and $0.05\,t_\text{col}$ in 3D
-($z = 6$), still 3.8 and 2.6 times the default step. With near-critical contact
-damping, keep the step fraction at or below about $1/20$. **SoftPack note**:
-estimates, to be checked once `DampedDynamics` runs.
+$0.64\,t_\text{col}$ for the centered form, 32 times the default step $t_\text{col}/50$
+(§12), and up to $0.27\,t_\text{col}$ for the lagged form, 13 times the default step.
+In a packing the fastest vibration can be up to $\sqrt{z}$ times faster than one
+contact ($z$ the contact number). For the centered form the worst case is about
+$0.32\,t_\text{col}$ in 2D ($z = 4$) and $0.26\,t_\text{col}$ in 3D ($z = 6$), 16 and 13
+times the default step. For the lagged form and the Euler, contact damping damps the
+fastest vibration more strongly too, and the worst case is about $0.08\,t_\text{col}$ in
+2D and $0.05\,t_\text{col}$ in 3D, 3.8 and 2.6 times the default step; with near-critical
+contact damping, keep the step fraction at or below about $1/20$ for those two.
+**SoftPack note**: estimates, to be checked once `DampedDynamics` runs. For
+`ContactDamping` with its defaults the damping is exactly proportional to the
+stiffness (above), so the modes decouple and each mode obeys the one-oscillator bound;
+for the other damping settings, and for Hertzian and Mindlin contacts, the bound is an
+estimate (our derivation).
 
 ## 9. Rattler rules
 
@@ -1350,8 +1418,9 @@ $$t_\text{col} = \pi\sqrt{\frac{m_\text{eff}}{k}},$$
 taken over the smallest particle mass, the stiffest contact (normal, or tangential
 with rotation when friction is on), and for Hertzian contacts the stiffness at the
 largest overlap expected; a run-time check warns if a contact becomes stiffer than
-the chosen `timestep` resolves. A fixed value can be given instead. For FIRE this is
-the starting step; FIRE then adapts it (§14).
+the chosen `timestep` resolves. For `DampedDynamics` the check uses the stable step of
+the chosen `integrator` (§8, "Integrator"). A fixed value can be given instead. For
+FIRE this is the starting step; FIRE then adapts it (§14).
 
 - 1/50 of the collision time: [Silbert2001] "an accurate simulation typically
   requires δt ∼ t_col/50", with
@@ -1370,8 +1439,10 @@ the starting step; FIRE then adapts it (§14).
   the actual critical time step."
 - FIRE step limits: [Guenole2020] list LAMMPS FIRE 2.0 defaults of a maximum step of
   10 times and a minimum step of 0.02 times the starting step.
-- With near-critical contact damping the stable step is smaller. The default keeps a
-  margin of at least about 2.6 (estimate in §8, "Time step with damping").
+- Damping does not shrink the stable step of the default centered integrator, which
+  keeps a margin of at least about 13 in the 3D worst case. It does shrink it for the
+  lagged and Euler options, where the margin falls to about 2.6 (estimates in §8, "Time
+  step with damping").
 
 ## 13. Friction models
 
