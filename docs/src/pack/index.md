@@ -104,7 +104,7 @@ pack(params)                                            # a reusable PackParams 
 | `particles_diameters` | `nothing` | diameters drawn from the distribution | a vector, one diameter per particle | **SoftPack choice** | [`particles_diameters`](options/particles_diameters.md) |
 | `contact` | `Hookean(stiffness = 1.0)` | $U(\delta) = \tfrac12 k\delta^2$, $f = k\delta$ while the overlap $\delta > 0$ | `Hertzian(stiffness = 1.0)`: $U = \tfrac25 k\delta^{5/2}$, $f = k\delta^{3/2}$ | [OHern2003] | [`contact`](options/contact/index.md) |
 | `friction` | `nothing` | frictionless: normal forces only | `CundallStrack`, `Mindlin` (next table) | **SoftPack choice** | [`friction`](options/friction/index.md) |
-| `mass` | `EqualMass(1.0)` | $m_i = 1$ for every particle | `Density(1.0; shape = :disc)`: $m_i = \rho\,\pi d_i^2/4$ (`:sphere` in 3D: $\rho\,\pi d_i^3/6$) | **SoftPack choice**; [LAMMPSset] for density masses | [`mass`](options/mass/index.md) |
+| `mass` | `EqualMass(1.0)` | $m_i = 1$ for every particle | `Density(1.0)`: $m_i = \rho\,\pi d_i^2/4$ in 2D, $\rho\,\pi d_i^3/6$ in 3D | **SoftPack choice**; [LAMMPSset] for density masses | [`mass`](options/mass/index.md) |
 | `target` | `Pressure(1e-4)` | $P = \dfrac{1}{D\,\Omega}\sum_{c} \mathbf f^{c}\cdot\boldsymbol\ell^{c} = 10^{-4}$ ($\boldsymbol\ell^c$ the branch vector, $\Omega$ the box area or volume), elastic forces only | any pressure | [Agnolin2007] (stress formula) | [`target`](options/target/index.md) |
 
 With friction on, the friction models' own defaults:

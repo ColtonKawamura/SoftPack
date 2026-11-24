@@ -16,7 +16,7 @@ and $a$, $b$ the mass- and stiffness-proportional constants of the damping matri
 $\boldsymbol\Gamma = a\mathbf M + b\mathbf K$. The full derivations are in the
 [wiki](https://github.com/ColtonKawamura/SoftPack/wiki), one page per section.
 
-Status: design stage (no engine code yet). Last updated 2026-11-23. Every setting has
+Status: design stage (no engine code yet). Last updated 2026-11-24. Every setting has
 a default and a reason (§0), including how `pack()` reaches the target pressure
 (the boundary, the initial state and the compression protocol, §2).
 
@@ -35,7 +35,7 @@ reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
 | `particles_diameters` | `nothing` (drawn from the distribution) | a vector with one diameter per particle | 3 |
 | `contact` | `Hookean(stiffness = 1.0)` | `Hertzian(stiffness = 1.0)` | 2 |
 | `friction` | `nothing` (frictionless) | `CundallStrack(friction_coefficient = 0.5, stiffness_ratio = :matched)`, `Mindlin(friction_coefficient = 0.5, poisson_ratio = 0.0)` | 2, 13 |
-| `mass` | `EqualMass(1.0)` | `Density(1.0; shape = :disc)` (`:sphere` in 3D) | 4 |
+| `mass` | `EqualMass(1.0)` | `Density(1.0)` (disk area in 2D, sphere volume in 3D) | 4 |
 | `target` | `Pressure(1e-4)` | | 2 |
 | `boundary` | `Periodic()` | `Walls(friction = true)` (rigid flat walls), `Walls(friction = false)` | 2 |
 | `initial_state` | `Dilute(packing_fraction = 0.25)` | any packing fraction at which the particles fit | 2 |
@@ -112,6 +112,7 @@ pack(dimension = 2)
 
 - **SoftPack choice.** 2D packings are the cheapest to make and to check by eye, and
   the bidisperse mixture below is the standard 2D one. `dimension = 3` is an option.
+- The dimension also fixes the particle shape: disks in 2D, spheres in 3D (§4).
 
 ```julia
 pack(particles_count = 256)
@@ -213,7 +214,7 @@ $$\frac{P}{k\,d^{\,2-D}} \sim \frac{\langle\delta\rangle}{d} \sim \varphi - \var
   stiffness parameter κ", $\kappa = (\tilde E/P)^{2/3}$ for Hertz contacts, with
   "Under pressure P, the typical force in a contact is of order P a²" and "κ sets the
   scale of the typical normal deflection h in Hertzian contacts, as h/a ∼ 1/κ."
-  Packings at the same $P/k$ (or $\kappa$) are the same packing in different units, so
+  Packings at the same $P/k$ (or [Agnolin2007]'s $\kappa$) are the same packing in different units, so
   $k = 1$ loses nothing: **SoftPack choice** for the value.
 
 ```julia
@@ -281,7 +282,7 @@ $$P = \frac{1}{D\,V}\left(\sum_{\text{pairs}} f_n^{c}\,\ell^{c} + \sum_{\text{wa
   forms agree to $4\times10^{-10}$ relative, and the pair sum alone is 6.4% too low
   (the 50 wall contacts carry a share of the pressure).
 - Not designed yet for `Walls`: whether a wall contact counts toward the contact number
-  of the rattler rules (§9), and the tangential effective mass at a wall (§8).
+  of the rattler rules (§9). The tangential effective mass at a wall is in §8.
 
 ```julia
 pack(initial_state = Dilute(packing_fraction = 0.25))
@@ -479,19 +480,41 @@ pack(mass = EqualMass(1.0))
 - The value 1.0 sets the mass unit: **SoftPack choice**.
 
 ```julia
-pack(mass = Density(1.0; shape = :disc))
+pack(mass = Density(1.0))
 ```
 
-**Decision.** The option: mass from a material density times the particle's area
-(`shape = :disc`, the default in 2D) or volume (`shape = :sphere`, the default in 3D).
+**Decision.** The option: mass from a material density times the particle's area in 2D
+(a disk) or volume in 3D (a sphere).
 
 - Density-based mass (DEM convention): [LAMMPSset] "density/disc value = particle
   density for a 2d disc or ellipse (mass/distance^2 units)"; [Somfai2005] "The unit
   of mass is set by asserting that the material of the grains has unit density."
   That is the reason for the default density 1.0.
-- `shape = :disc` in 2D: **SoftPack choice**, because SoftPack's 2D particles are
-  disks. `shape = :sphere` in 2D gives the Leiden convention: [Somfai2005] "2D
-  samples containing 600 spheres (their centers being confined to a plane)".
+- No `shape` keyword: **SoftPack choice**. The shape follows the dimension, disks in 2D
+  and spheres in 3D, so every call that can be made is valid and no (dimension, shape)
+  pair needs an error. A shape option can be added later without changing the meaning
+  of any call made today (§15).
+- Spheres whose centers are confined to a plane are not an option. That is the Leiden
+  2D convention: [Somfai2005] "2D samples containing 600 spheres (their centers being
+  confined to a plane)". SoftPack's 2D particles are disks, so a Leiden 2D packing
+  matches in sizes but not in masses (§15).
+
+**Moment of inertia.** With friction the particles rotate. A uniform disk or sphere has
+
+$$I = \kappa\,m R^2, \qquad \kappa = \tfrac12\ \text{(disk, 2D)}, \qquad \kappa = \tfrac25\ \text{(sphere, 3D)},$$
+
+with $R = d/2$. It sets the tangential effective mass $M_t$ (§8), the matched stiffness
+ratio (§13) and the time step with friction (§12).
+
+- **SoftPack choice**: the uniform-body value of the particle shape of this section, with
+  no keyword. The constants the design already uses follow from it: the matched
+  stiffness ratio $1/(1 + mR^2/I)$ is 1/3 and 2/7, which needs $mR^2/I = 2$ and $5/2$
+  (§13).
+- `EqualMass` uses the same $\kappa$: it sets the mass by hand, and the particle is still a
+  uniform disk or sphere.
+- A user-given $I$ and a thin ring ($\kappa = 1$) are not options: neither keeps the 1/3 and
+  2/7 constants (a ring gives 1/2), and a ring is not a uniform particle of the stated
+  mass.
 
 ## 5. Convergence (stopping) criterion
 
@@ -925,7 +948,7 @@ pack(algorithm = DampedDynamics(damping = ContactDamping(tangential_mass = :with
 
 - A tangential force at the contact both pushes and spins the two particles, so the
   sliding motion responds like a lighter mass than the pair. For particles $i$ and
-  $j$ with masses $m$, radii $R$ and moments of inertia $I$, the tangential and
+  $j$ with masses $m$, radii $R$ and moments of inertia $I = \kappa\,mR^2$ (§4), the tangential and
   normal masses are
 
 $$\frac{1}{M_t} = \frac{1}{m_i} + \frac{1}{m_j} + \frac{R_i^2}{I_i} + \frac{R_j^2}{I_j},
@@ -942,11 +965,18 @@ $$\frac{\gamma_t}{\gamma_n} = \sqrt{\frac{k_t M_t}{k_n M_n}} = \frac{1}{3}.$$
 
   Both directions decay equally fast, with a tangential coefficient a third of the
   normal one.
-- For equal disks $M_t = M_n/3$, for equal spheres $M_t = M_n/3.5$. A ratio measured
+- In 2D (disks) $M_t = M_n/3$ and in 3D (spheres) $M_t = M_n/3.5$: with $I = \kappa\,mR^2$,
+  $R^2/I = 1/(\kappa\,m)$, so $1/M_t = (1 + 1/\kappa)/M_n$ for any two particles, not only equal
+  ones (**SoftPack note**, our derivation). A ratio measured
   on the pair mass $M_n$ would really be $0.98\sqrt{3} \approx 1.7$ for disks and
   $0.98\sqrt{3.5} \approx 1.8$ for spheres, which is overdamped and slow. Measuring it
   on $M_t$ makes 0.98 mean 0.98. **SoftPack choice**, from the rigid-body mechanics
   of two particles in contact.
+- At a wall contact only the particle's own terms remain, since the wall is flat, rigid
+  and does not rotate: $1/M_n = 1/m_i$ and $1/M_t = 1/m_i + R_i^2/I_i$, so
+  $M_t = M_n\,\kappa/(1 + \kappa)$ with $M_n = m_i$ (§2). The ratio $M_t/M_n$ is the same as in a
+  pair, 1/3 in 2D and 2/7 in 3D; only the masses differ. **SoftPack note**, our
+  derivation.
 - For Mindlin contacts the critical value uses the contact's current tangential
   stiffness, as the normal one does for Hertz.
 
@@ -1487,11 +1517,14 @@ pack(friction = CundallStrack(stiffness_ratio = :matched))
 
 **Decision.** The tangential over the normal stiffness is
 
-$$\frac{k_t}{k_n} = \frac{1}{1 + mR^2/I},$$
+$$\frac{k_t}{k_n} = \frac{1}{1 + mR^2/I} = \frac{\kappa}{1 + \kappa},$$
 
-which makes the tangential contact vibration (sliding plus rotation, §8) exactly as
-fast as the normal one for two equal particles. That is 1/3 for disks and 2/7 for
-spheres.
+with $I = \kappa\,mR^2$ (§4). It makes the tangential contact vibration (sliding plus
+rotation, §8) exactly as fast as the normal one for two equal particles. That is 1/3 in
+2D (disks) and 2/7 in 3D (spheres).
+
+- The same holds for any two particles of one shape, and for a particle at a wall,
+  because $1/M_t = (1 + 1/\kappa)/M_n$ in each case (§8). **SoftPack note**, our derivation.
 
 - [Silbert2001] use $k_t/k_n = 2/7$ for spheres for this reason (equal periods of
   normal and shear contact oscillations), and LAMMPS uses 2/7 when $K_t$ is not
@@ -1624,3 +1657,50 @@ pack(algorithm = FIRE(damping = nothing, drag = nothing))
 ```
 
 **Decision.** No contact damping and no drag; see §8.
+
+## 15. Roadmap: other particle shapes
+
+Nothing in this section is designed, and none of it is promised for a first release.
+It records what is planned and what the design keeps open, so that it can be added
+without changing the meaning of any call made today.
+
+- Cylinders (3D disks): a disk with a thickness, in a 3D box. Planned.
+- User-defined shapes: the user passes their own shape functions (below). Planned.
+- Spheres confined to a plane, the Leiden 2D convention (§4): one more 2D shape, with
+  sphere mass and $\kappa = 2/5$. It would come back as a shape, not as a `Density` keyword.
+
+A shape is more than a mass formula. Everything in the design that assumes a disk or a
+sphere is listed here, with what another shape would have to supply instead:
+
+| Quantity | Disk and sphere today | Any other shape |
+|:---|:---|:---|
+| Size | one diameter $d_i$ (§3) | shape parameters (a cylinder: diameter and thickness) |
+| Mass | $\rho\,\pi d^2/4$ or $\rho\,\pi d^3/6$ (§4) | $\rho$ times the shape's area or volume |
+| Moment of inertia | the scalar $I = \kappa\,mR^2$ (§4) | in 3D an inertia tensor about the center of mass |
+| Rotation state | an angle (2D) or a spin vector (3D, §7) | an orientation and a spin vector |
+| Contact | overlap $\delta = (d_i + d_j)/2 - r_{ij}$ along the line of centers (§2) | a function that returns the overlap, the contact normal and the contact point, for a pair and for a wall |
+| Effective masses | $M_n$ from the masses alone, $M_t$ adds $R^2/I$ (§8) | both include rotation: each particle adds $(\mathbf r\times\hat{\mathbf e})^\top\mathbf I^{-1}(\mathbf r\times\hat{\mathbf e})$ to $1/m$, with $\mathbf r$ the vector to the contact point and $\hat{\mathbf e}$ the force direction |
+| Pressure | a tangential force drops out because the normal lies along $\boldsymbol\ell^{c}$ (§2) | in general it does not drop out |
+| Stored output | diameters and masses (§11) | the shape kind, its parameters and the orientations |
+
+The functions a user would pass are the right-hand column: the area or volume, the
+inertia, and the contact test.
+
+**Rules for the first implementation.** All **SoftPack choice**.
+
+- Every shape-specific quantity in the table sits behind one shape interface, with the
+  disk and the sphere as its first two members. No other code writes $\pi d^2/4$,
+  $R^2/I$ or $(d_i + d_j)/2 - r_{ij}$.
+- The contact laws, friction models and dashpots read the overlap, the normal, the
+  contact point and the effective masses from the shape's contact, not the diameters.
+  Torques are $\mathbf r\times\mathbf f$ about the contact point, which for a disk or a
+  sphere is $R\hat{\mathbf n}$.
+- Output and restart files (§6, §11) record a shape kind beside each diameter, so a file
+  written today still reads after more shapes exist.
+- A new shape arrives as an addition, a new value or constructor with today's disk or
+  sphere as the default, so no call written today changes meaning.
+
+Open for any shape other than a disk or a sphere: the contact test and the neighbor
+search for non-round shapes, how a shape sets the length unit and the packing fraction
+(§3), the contact laws (the Hertz law depends on the curvatures at the contact), and
+the rattler counts (§9).

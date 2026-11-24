@@ -139,6 +139,7 @@ makedocs(;
             "Notation" => "reference/notation.md",
             "References" => "reference/references.md",
         ],
+        "Roadmap" => "roadmap.md",
     ],
 )
 

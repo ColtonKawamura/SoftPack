@@ -20,6 +20,10 @@ SoftPack has two functions you call. Each page opens with every default written 
 - [Notation](reference/notation.md): every symbol, its meaning and units.
 - [References](reference/references.md): full citations for every source.
 
+## Roadmap
+
+- [Roadmap](roadmap.md): planned particle shapes (cylinders, user-defined shapes) and what the design keeps open for them.
+
 ## Conventions
 
 - **Notation** follows [Notation](reference/notation.md): $\gamma$ is a dashpot coefficient (force per velocity), rates are $r$ and $a$, and $c$ is never damping.
