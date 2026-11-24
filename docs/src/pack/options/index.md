@@ -46,11 +46,11 @@ When a run stops, what happens if it does not converge, and how to continue it.
 
 ## Algorithm, damping and time step
 
-How the packing is relaxed. `damping` and `drag` are not keywords of `pack()`: they are keywords of the algorithm, so they sit one level down, under `algorithm`.
+How the packing is relaxed. `damping`, `drag` and `integrator` are not keywords of `pack()`: they are keywords of the algorithm, so they sit one level down, under `algorithm`.
 
 | Keyword | Sets | Default | Choices |
 |:---|:---|:---|:---|
-| [`algorithm`](algorithm/index.md) | the minimizer or dynamics | `FIRE()` | [`FIRE()`](algorithm/FIRE.md), [`DampedDynamics()`](algorithm/DampedDynamics/index.md); inside them: [`damping`](algorithm/DampedDynamics/damping/index.md), [`drag`](algorithm/DampedDynamics/drag/index.md) |
+| [`algorithm`](algorithm/index.md) | the minimizer or dynamics | `FIRE()` | [`FIRE()`](algorithm/FIRE.md), [`DampedDynamics()`](algorithm/DampedDynamics/index.md); inside them: [`damping`](algorithm/DampedDynamics/damping/index.md), [`drag`](algorithm/DampedDynamics/drag/index.md), [`integrator`](algorithm/DampedDynamics/integrator/index.md) |
 | [`timestep`](timestep/index.md) | the size of the time step | `CollisionTime()` | [`CollisionTime()`](timestep/CollisionTime.md), fixed number |
 
 ## Rattlers
@@ -73,22 +73,24 @@ The random seed and what is recorded during the run.
 
 ## Where is damping?
 
-!!! note "damping and drag are keywords of the algorithm, not of `pack()`"
+!!! note "damping, drag and integrator are keywords of the algorithm, not of `pack()`"
     The algorithm decides whether there are dashpots at all.
     `FIRE()` takes `damping` and `drag` and defaults both to `nothing`.
-    `DampedDynamics()` takes the same two keywords and defaults `damping` to `ContactDamping()`.
+    `DampedDynamics()` takes the same two keywords and defaults `damping` to `ContactDamping()`, and it also takes `integrator`, which defaults to `:centered_velocity_verlet`.
 
 ```julia
-pack(                                             # run the packing
-    algorithm = DampedDynamics(                   # velocity-Verlet damped dynamics
-        damping = ContactDamping(normal = 0.98),  # contact dashpots, normal ratio 0.98
-        drag    = nothing,                        # no Stokes drag
-    )                                             # end of DampedDynamics call
-)                                                 # end of pack call
+pack(                                              # run the packing
+    algorithm = DampedDynamics(                    # damped dynamics
+        damping    = ContactDamping(normal = 0.98),   # contact dashpots, normal ratio 0.98
+        drag       = nothing,                         # no Stokes drag
+        integrator = :centered_velocity_verlet,       # dashpot on the end-of-step velocity (default)
+    )                                              # end of DampedDynamics call
+)                                                  # end of pack call
 ```
 
 - [`damping`](algorithm/DampedDynamics/damping/index.md): the dashpot models [`ContactDamping()`](algorithm/DampedDynamics/damping/ContactDamping.md), [`ViscousRate()`](algorithm/DampedDynamics/damping/ViscousRate.md) and [`RelativeVelocityDamping()`](algorithm/DampedDynamics/damping/RelativeVelocityDamping.md).
 - [`drag`](algorithm/DampedDynamics/drag/index.md): Stokes drag, [`StokesDrag()`](algorithm/DampedDynamics/drag/StokesDrag.md).
+- [`integrator`](algorithm/DampedDynamics/integrator/index.md): the time stepper, [`:centered_velocity_verlet`](algorithm/DampedDynamics/integrator/centered_velocity_verlet.md), [`:lagged_velocity_verlet`](algorithm/DampedDynamics/integrator/lagged_velocity_verlet.md) or [`:semi_implicit_euler`](algorithm/DampedDynamics/integrator/semi_implicit_euler.md).
 - [`FIRE()`](algorithm/FIRE.md): the default algorithm, with no damping and no drag.
 
 ## Beyond the keywords

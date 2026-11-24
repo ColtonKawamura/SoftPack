@@ -172,6 +172,7 @@ in [Guenole2020] (Table 1), with $\Delta t_\text{start}$ the step from `timestep
 | `attractive` | `false` | $F_n = \max(0,\, k_n\delta - \gamma_n v_n)$ | [Somfai2005], [LAMMPSgran] | [`ContactDamping()`](options/algorithm/DampedDynamics/damping/ContactDamping.md) |
 | `coulomb_limit` | `:elastic` | $\lvert F_t^\text{el}\rvert \le \mu F_n^\text{el}$; tangential dashpot off while sliding | [Agnolin2007] | [`ContactDamping()`](options/algorithm/DampedDynamics/damping/ContactDamping.md) |
 | `drag` | `nothing` | no Stokes drag ($a = 0$ in $\boldsymbol\Gamma = a\mathbf M + b\mathbf K_0$) | **SoftPack choice** | [`drag`](options/algorithm/DampedDynamics/drag/index.md) |
+| `integrator` | `:centered_velocity_verlet` | the dashpot uses the end-of-step velocity $\mathbf v_{n+1}$ (implicit); the options are `:lagged_velocity_verlet` ($\mathbf v_{n+1/2}$) and `:semi_implicit_euler` ($\mathbf v_n$) | **SoftPack choice** | [`integrator`](options/algorithm/DampedDynamics/integrator/index.md) |
 
 With these defaults and Hookean contacts the damping is exactly stiffness-proportional,
 $\boldsymbol\Gamma = b\,\mathbf K_0$ with $b = 2\zeta/\omega_c$, so every underdamped mode

@@ -92,6 +92,12 @@ makedocs(;
                             "Overview" => "pack/options/algorithm/DampedDynamics/drag/index.md",
                             "`StokesDrag()`" => "pack/options/algorithm/DampedDynamics/drag/StokesDrag.md",
                         ],
+                        "`integrator`" => [
+                            "Overview" => "pack/options/algorithm/DampedDynamics/integrator/index.md",
+                            "`:centered_velocity_verlet`" => "pack/options/algorithm/DampedDynamics/integrator/centered_velocity_verlet.md",
+                            "`:lagged_velocity_verlet`" => "pack/options/algorithm/DampedDynamics/integrator/lagged_velocity_verlet.md",
+                            "`:semi_implicit_euler`" => "pack/options/algorithm/DampedDynamics/integrator/semi_implicit_euler.md",
+                        ],
                     ],
                 ],
                 "`timestep`" => [
