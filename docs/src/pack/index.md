@@ -15,9 +15,9 @@ other choices, the main source, and the wiki section that explains it. Sources a
 cited by key and listed in full at the end; **SoftPack choice** marks a default with no
 literature source.
 
-Units throughout: small diameter $d = 1$, contact stiffness $k = 1$, particle mass
-$m = 1$, so lengths are in $d$, forces in $k\,d$ (Hookean), pressures in $k\,d^{2-D}$
-and times in $\tau = \sqrt{m/k}$ ([Units and length unit](../reference/units.md)). Symbols are defined in
+Units throughout: reference diameter $d_\text{ref} = 1$ (the small diameter of the default mixture), contact stiffness $k = 1$, reference mass
+$m_\text{ref} = 1$, so lengths are in $d$, forces in $k\,d$ (Hookean), pressures in $k\,d^{2-D}$
+and times in $\tau = \sqrt{m_\text{ref}/k}$ ([Units and length unit](../reference/units.md)). Symbols are defined in
 [Notation](../reference/notation.md).
 
 ## The default packing in one call

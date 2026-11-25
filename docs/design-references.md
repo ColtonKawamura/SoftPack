@@ -16,7 +16,7 @@ and $a$, $b$ the mass- and stiffness-proportional constants of the damping matri
 $\boldsymbol\Gamma = a\mathbf M + b\mathbf K$. The full derivations are in the
 [wiki](https://github.com/ColtonKawamura/SoftPack/wiki), one page per section.
 
-Status: design stage (no engine code yet). Last updated 2026-11-24. Every setting has
+Status: design stage (no engine code yet). Last updated 2026-11-25. Every setting has
 a default and a reason (§0), including how `pack()` reaches the target pressure
 (the boundary, the initial state and the compression protocol, §2).
 
@@ -25,7 +25,8 @@ a default and a reason (§0), including how `pack()` reaches the target pressure
 ## 0. Every default at a glance
 
 Every setting, its default, the other choices, and the section that gives the
-reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
+reasons. Units: reference diameter $d_\text{ref} = 1$ (the small diameter of the default
+mixture, §3), contact stiffness 1, reference mass $m_\text{ref} = 1$ (§4).
 
 | Setting | Default | Other choices | § |
 |---|---|---|---|
@@ -178,9 +179,9 @@ $$V(r_{ij}) = \frac{\epsilon}{\alpha}\left(1 - \frac{r_{ij}}{\sigma_{ij}}\right)
 pack(contact = Hookean(stiffness = 1.0))
 ```
 
-**Decision.** $k = 1$ sets the force unit. With the small diameter $d = 1$ as the
-length unit, the target pressure is then the dimensionless pressure, which says how
-deeply the particles overlap.
+**Decision.** $k = 1$ sets the force unit. With the reference diameter $d_\text{ref} = 1$
+(written $d$ below) as the length unit (§3), the target pressure is then the
+dimensionless pressure, which says how deeply the particles overlap.
 
 - Why one number is enough. A static packing has only three scales: the diameter $d$,
   the stiffness $k$ and the pressure $P$ (masses set how fast the packing gets there,
@@ -410,7 +411,12 @@ Sizes are diameters everywhere. `particles_size_distribution` chooses the law th
 diameters are drawn from; `particles_diameters` gives the diameters themselves. Each
 distribution sets its own length unit in its defaults: `Bidisperse` makes the small
 diameter 1 (the jamming convention); polydisperse distributions make the mean diameter
-1 (the Leiden convention). Every output stores each particle's diameter.
+1 (the Leiden convention). That diameter is the reference diameter $d_\text{ref}$, the
+one particle scale the other sections use; for `particles_diameters` it is the mean of
+the list. The mean of the diameters actually drawn is $\langle d\rangle$: 1.2 for the
+default mixture, $d_\text{ref}$ for `Monodisperse`, and $d_\text{ref}$ up to sampling
+scatter for `UniformPolydisperse`. Every output stores each particle's diameter,
+$d_\text{ref}$ and $\langle d\rangle$.
 
 - DEM software takes diameters: [LAMMPSset] "diameter value = diameter of spherical
   particle (distance units)"
@@ -441,6 +447,11 @@ $d_\text{mean}(1 + s)$, with $d_\text{mean}$ = `diameter_mean` and $s$ = `spread
 - `spread = 0.2`: [Somfai2005] "For the 2D simulations the spheres have
   polydispersity to avoid crystallization: the diameters are uniformly distributed
   between 0.8 and 1.2 times their average."
+- The drawn diameters are not rescaled to make their sample mean exactly
+  $d_\text{mean}$: **SoftPack choice**. The sample mean scatters around $d_\text{mean}$ with
+  standard deviation $d_\text{mean}\,s/\sqrt{3N}$, which is $0.0072\,d_\text{mean}$ for $N = 256$ and
+  $s = 0.2$, so the output stores $\langle d\rangle$. [Somfai2005] write only "the average
+  grain diameter", which does not say whether it is the sample or the distribution mean.
 
 ```julia
 pack(particles_size_distribution = Monodisperse(diameter = 1.0))
@@ -462,7 +473,9 @@ pack(particles_diameters = [1.0, 1.4, 1.0, 1.4])  # exactly these diameters
 Giving `particles_diameters` uses exactly those diameters instead, one per particle,
 and `particles_count` is then their number. Give a distribution or the diameters, not
 both. **SoftPack choice**: an exact list is how a packing is matched to an experiment
-or to another code's particles.
+or to another code's particles. The reference diameter $d_\text{ref}$ is the mean of the
+list: **SoftPack choice**, because no cited paper defines a scale for an arbitrary list and the
+mean is the Leiden convention for polydisperse packings.
 
 ## 4. Mass
 
@@ -499,6 +512,18 @@ pack(mass = Density(1.0))
   2D convention: [Somfai2005] "2D samples containing 600 spheres (their centers being
   confined to a plane)". SoftPack's 2D particles are disks, so a Leiden 2D packing
   matches in sizes but not in masses (§15).
+
+**Reference mass.** The mass scale $m_\text{ref}$ is the `EqualMass` value (1 by default)
+and, with `Density`, the mean mass $\frac1N\sum_i m_i$. The time unit is
+$\tau = \sqrt{m_\text{ref}/k}$ (§8).
+
+- **SoftPack choice**: no cited paper sets a mass or time scale from a small or smallest
+  particle. [OHern2003] give every particle the same mass, so $m_\text{ref}$ is that mass,
+  and [Somfai2005] "The speed of sound of the pressure waves inside the grains becomes
+  unity (for zero Poisson ratio). This sets our unit of time", a scale of the grain
+  material and not of one grain.
+- The time step still uses the smallest particle mass (§12). That is a stability bound,
+  not a unit.
 
 **Moment of inertia.** With friction the particles rotate. A uniform disk or sphere has
 
@@ -549,7 +574,8 @@ $$\max_i \left|\mathbf{F}_i\right| < \epsilon_F\,\langle f_n\rangle \qquad \text
 
 where $\mathbf{F}_i$ and $\mathbf{T}_i$ are the net elastic force and torque on
 particle $i$, $\langle f_n\rangle$ is the mean normal contact force over all contacts
-(the force behind the pressure, §2), and $\langle d\rangle$ is the mean diameter.
+(the force behind the pressure, §2), and $\langle d\rangle$ is the mean diameter of the
+packing (§3).
 
 - A tolerance relative to the typical force: [Agnolin2007] "Calculations are
   stopped when the net elastic force on each particle is below 10^-4 a^2 P, the
@@ -615,8 +641,11 @@ pack(convergence = KineticEnergy(tolerance = 1e-8))
 **Decision.** The option's default: with $\epsilon_K$ = `tolerance`, the packing is at
 rest when the `RelativeForce` test (default tolerance $10^{-8}$) holds and the mean
 kinetic energy per particle satisfies
-$\frac{1}{N}\sum_i E_i^\text{kin} < \epsilon_K\,P_\text{target}\,d^{D}$
-($N$ the number of particles, $d$ the small diameter, $D$ the dimension).
+$\frac{1}{N}\sum_i E_i^\text{kin} < \epsilon_K\,P_\text{target}\,d_\text{ref}^{D}$
+($N$ the number of particles, $d_\text{ref}$ the reference diameter (§3), $D$ the dimension).
+
+- The energy scale $d_\text{ref}^{D}$ and the torque scale $\langle d\rangle$ differ for the
+  default mixture (1 and 1.2): **SoftPack note**.
 
 - The [Agnolin2007] value above, used together with a force bound as they do;
   [Xiong2019] stop each minimization on a maximum per-disk kinetic energy.
@@ -1177,7 +1206,7 @@ pack(algorithm = DampedDynamics(damping = ViscousRate(normal = 0.5, tangential =
 
 **Decision.** The option's defaults: dashpot force $-\gamma\,v$ with coefficient
 $\gamma = m_\text{eff}\,r$ and rate $r = 0.5$ in both directions, in units of $1/\tau$,
-$\tau = \sqrt{m/k}$ ($m$ the small-particle mass, $k$ the normal stiffness constant).
+$\tau = \sqrt{m_\text{ref}/k}$ ($m_\text{ref}$ the reference mass (§4), $k$ the normal stiffness constant).
 
 - The default values are [Santos2024]'s, $r_n = r_s = 0.5/\tau$ (their $\gamma_n$,
   $\gamma_s$, LAMMPS rates) with $\tau = \sqrt{m/k_n}$, as are the equal values for
@@ -1587,6 +1616,9 @@ the chosen `timestep` resolves. For `DampedDynamics` the check uses the stable s
 the chosen `integrator` (§8, "Integrator"). A fixed value can be given instead. For
 FIRE this is the starting step; FIRE then adapts it (§14).
 
+- The smallest particle mass sets the step because stability needs the shortest
+  collision time: **SoftPack note**. The time unit $\tau$ uses $m_\text{ref}$ instead (§4),
+  since a unit has no such requirement.
 - 1/50 of the collision time: [Silbert2001] "an accurate simulation typically
   requires δt ∼ t_col/50", with
   $t_\text{col} = \pi\left(2k_n/m - r_n^2/4\right)^{-1/2}$ (their $\gamma_n$ is a rate,

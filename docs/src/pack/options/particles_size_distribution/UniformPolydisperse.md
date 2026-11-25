@@ -21,8 +21,9 @@ pack(                                                    # run the packing
 
 $$p(d) = \frac{1}{2s\,d_\text{mean}} \quad \text{for } d_\text{mean}(1-s) \le d \le d_\text{mean}(1+s).$$
 
-- `diameter_mean = 1.0` **(default)** — the mean diameter, which also sets the length unit: $\langle d\rangle = d_\text{mean}$.
+- `diameter_mean = 1.0` **(default)** — the mean diameter, which also sets the length unit: $d_\text{ref} = d_\text{mean}$.
   - [Somfai2005] "Our unit of length is the average grain diameter."
+  - The drawn diameters are not rescaled to make their sample mean exactly $d_\text{mean}$ (**SoftPack choice**), so the output stores the realized mean $\langle d\rangle$.
   - [Shundyak2007] "our units are such that the mass density, the average particle diameter, and the Young's modulus of the grains are 1."
 - `spread = 0.2` **(default)** — the half-width over the mean, $s = \texttt{spread}$.
   - The polydispersity (standard deviation over mean) is $s/\sqrt{3}$.

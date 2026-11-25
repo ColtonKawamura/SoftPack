@@ -29,6 +29,7 @@ pack(                                            # run the packing with given di
   - Give a distribution or the diameters, not both.
 - The length unit is then whatever unit the given diameters are in.
   - With $k = 1$ the pressure unit follows from it.
+- The reference diameter $d_\text{ref}$ is the mean of the given diameters: **SoftPack choice**, because no cited paper defines a scale for an arbitrary list and the mean is the Leiden convention for polydisperse packings.
 
 ## Why this default
 
