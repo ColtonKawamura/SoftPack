@@ -131,6 +131,7 @@ makedocs(;
             "`path`" => "write_packing/path.md",
             "`rattlers_file`" => "write_packing/rattlers_file.md",
             "`compression`" => "write_packing/compression.md",
+            "`overwrite`" => "write_packing/overwrite.md",
         ],
         "Reference" => [
             "Naming rules" => "reference/naming.md",

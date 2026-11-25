@@ -59,6 +59,7 @@ reasons. Units: small diameter 1, contact stiffness 1, particle mass 1.
 | file format (`write_packing`) | HDF5 | CSV | 11 |
 | `write_packing` `rattlers_file` | `false` | `true` | 11 |
 | `write_packing` `compression` | `nothing` | `:gzip` (level 4) | 11 |
+| `write_packing` `overwrite` | `false` | `true` | 11 |
 
 ## 1. Interface and naming
 
@@ -1497,9 +1498,16 @@ write_packing("packing.h5", packing; rattlers_file = false)
 **Decision.** When a rattler rule is applied (the default), the main datasets hold
 only the remaining particles, with their original ids. `rattlers_file = true` also
 writes a second file with every particle and a rattler flag in the same layout. With
-`rattlers = nothing` there is one file with every particle.
+`rattlers = nothing` there is one file with every particle and no rattler flag.
 
-- **SoftPack choice**.
+- **SoftPack choice**: the second file doubles the output.
+- The second file is named after the main file: `_rattlers` goes before the extension,
+  so `packing.h5` gives `packing_rattlers.h5`, in the same directory. A path without an
+  extension gets `_rattlers` at the end. There is no separate keyword for its path.
+  **SoftPack choice.**
+- `rattlers_file = true` with `rattlers = nothing`: `write_packing` warns that no
+  rattler rule was run, then writes both files. They hold the same particles, and the
+  flag in the second file marks none of them as a rattler. **SoftPack choice.**
 
 ```julia
 write_packing("packing.h5", packing; compression = nothing)
@@ -1514,6 +1522,28 @@ write_packing("packing.h5", packing; compression = nothing)
 - `compression = :gzip` uses level 4 unless a level is given: [h5py]
   "compression_opts sets the compression
   level and may be an integer from 0 to 9, default is 4."
+
+```julia
+write_packing("packing.h5", packing; overwrite = false)
+```
+
+**Decision.** `write_packing` stops with an error if a file it would write already
+exists, unless `overwrite = true`. It checks both paths (the main file and, with
+`rattlers_file = true`, the second file) before it writes either.
+
+- A silent overwrite could destroy a file that `restart_packing` (§6) still needs: a
+  run restarted from `packing.h5` that writes back to `packing.h5` has to say
+  `overwrite = true`. **SoftPack choice.**
+- The periodic saves of `restart_file` (§6) are not affected: they rewrite their own
+  file by design.
+
+**Safe writes.** `write_packing` writes each file to a temporary file in the same
+directory as its path, then renames it over the path, as `restart_file` does (§6). A
+job killed during a write leaves any existing file intact. The temporary file sits in
+the same directory because a rename is atomic only within one file system. With two
+files, both temporary files are written first and then renamed one after the other; a
+kill between the two renames can leave the new main file next to an old or missing
+second file. **SoftPack choice.**
 
 ```julia
 pack(snapshots = nothing)

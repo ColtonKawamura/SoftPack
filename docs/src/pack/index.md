@@ -58,7 +58,7 @@ pack(                                                                # run the p
 )                                                                    # end of pack call
 ```
 
-and, for files, `write_packing(path, packing; rattlers_file = false, compression = nothing)`,
+and, for files, `write_packing(path, packing; rattlers_file = false, compression = nothing, overwrite = false)`,
 which writes HDF5 ([file format](../write_packing/path.md)).
 
 - `pack(...)` — runs the packing with every default written out.
@@ -70,9 +70,10 @@ which writes HDF5 ([file format](../write_packing/path.md)).
   - Damped dynamics: [Damping (damped dynamics)](#Damping-(damped-dynamics)).
   - Rattlers: [Rattlers](#Rattlers).
   - Seed and outputs: [Reproducibility and outputs](#Reproducibility-and-outputs).
-- `write_packing(path, packing; rattlers_file = false, compression = nothing)` — the file call, written with its defaults ([file format](../write_packing/path.md)).
+- `write_packing(path, packing; rattlers_file = false, compression = nothing, overwrite = false)` — the file call, written with its defaults ([file format](../write_packing/path.md)).
   - `rattlers_file = false` — write only the remaining particles ([rattlers_file](../write_packing/rattlers_file.md)).
   - `compression = nothing` — leave the datasets uncompressed ([compression](../write_packing/compression.md)).
+  - `overwrite = false` — stop with an error if a file already exists ([overwrite](../write_packing/overwrite.md)).
 
 ## Three ways to call `pack()`
 
@@ -202,6 +203,7 @@ The options' sources: `TwoContact` [Ishima2023], `ForceFloor` [Shundyak2007],
 | file format (`write_packing`) | HDF5 | one binary file, read natively by Julia, Python and MATLAB | CSV | [HDF5jl], [h5py], [MATLABh5read] | [`path`](../write_packing/path.md) |
 | `write_packing` `rattlers_file` | `false` | the file holds the packing without rattlers only | `true`: a second file with every particle | **SoftPack choice** | [`rattlers_file`](../write_packing/rattlers_file.md) |
 | `write_packing` `compression` | `nothing` | uncompressed, so datasets can be memory-mapped | `:gzip` (level 4) | [HDF5jl], [h5py] | [`compression`](../write_packing/compression.md) |
+| `write_packing` `overwrite` | `false` | an existing file stops the write with an error | `true`: replace the existing file | **SoftPack choice** | [`overwrite`](../write_packing/overwrite.md) |
 | `snapshots`, `movie` | `nothing`, `nothing` | nothing recorded during the run | `Snapshots(every = interval)`, `Movie(path; every = interval)` | **SoftPack choice** | [`snapshots`](options/snapshots/index.md), [`movie`](options/movie/index.md) |
 
 ## References
