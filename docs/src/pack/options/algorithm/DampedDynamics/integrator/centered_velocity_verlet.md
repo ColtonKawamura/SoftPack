@@ -182,7 +182,7 @@ m\,\mathbf v_{n+1/2} +
     - **Blow-up above the stable step**: when $\omega_\text{max}\,\Delta t$ exceeds 2 the highest mode flips sign and grows every step, and the run diverges.
     - **Cost**: the solve every step can make a run slower than an explicit integrator even though the step may be longer, as [Samiei2013] found for implicit integration in DEM.
     - **Nonlinear contacts**: the bound is for linear damping, and Hertzian and Mindlin contacts, clipped dashpots and the Coulomb limit change the matrices from step to step, so for them it is an estimate.
-    - **Exact restart**: the restart test passed only for the lagged form so far, and sliding flags may have to be stored for this integrator too.
+    - **Exact restart**: the restart test passed only for the lagged form so far, and the sliding flags are part of the stored contact history.
 
     **How SoftPack mitigates this**
 

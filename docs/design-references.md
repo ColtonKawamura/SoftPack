@@ -696,7 +696,7 @@ packing = pack(restart_packing = "packing.h5")  # continues where it stopped
   system configuration from a restart file. This allows continuation of a previous
   run."
 - Everything needed is in the file (§11): every particle, including rattlers; positions,
-  velocities, rotations and spins; the contact history (tangential springs, wall contacts included); the box and its boundary;
+  velocities, rotations and spins; the contact history (tangential springs and their sliding flags, wall contacts included); the box and its boundary;
   the algorithm's internal state (FIRE's current step and mixing coefficient and its
   counters); the state of the compression protocol (§2: the accepted state, the strain
   step, the counts of accepted and rejected steps, and whether drag is on); the step
@@ -777,9 +777,11 @@ pack(restart_packing = "restart.h5")
 
 **Decision.** Every combination of algorithm, contact law, friction model, target,
 convergence test and rattler rule is allowed in one `pack()`. Force models (normal
-law plus friction, holding the contact history) and algorithms only exchange
-positions/rotations and forces/torques. FIRE with friction is allowed and recorded,
-but documented as non-standard. The algorithm defaults to `FIRE()` (§2).
+law plus friction, holding the contact history) and algorithms exchange
+positions/rotations and forces/torques, and the force model also hands the algorithm a
+table with a row per contact (below); velocities never go into the force model. FIRE
+with friction is allowed and recorded, but documented as non-standard. The algorithm
+defaults to `FIRE()` (§2).
 
 - Frictional packings in the literature are made with damped dynamics, not FIRE:
   [Xiong2019] "we minimize the total potential energy U by adding viscous damping
@@ -799,6 +801,100 @@ but documented as non-standard. The algorithm defaults to `FIRE()` (§2).
 - `DampedDynamics` has an `integrator` setting with three values, and the default is
   the centered velocity Verlet (§8, "Integrator"). FIRE's integrator is a separate
   setting (§14).
+
+### The contact table and the contact history
+
+**Decision.** The force model owns the contact list and the contact history. After each
+force evaluation it hands out one table with a row per contact, which the algorithm, the
+pressure, the convergence test and the rattler rules read. Damping stays a setting of the
+algorithm (§8): the algorithm combines the table with the velocities it holds, and the
+force model never receives a velocity. **SoftPack choice.**
+
+- Why: a contact dashpot needs the contact data, which only the force model has, and the
+  velocities, which only the algorithm has. Handing the contact data out keeps the force
+  model independent of the integrator (§8, "Integrator"), and the same table serves the
+  pressure (§2), $\langle f_n\rangle$ (§5) and the rattler rules (§9).
+- The other option was to pass the velocities into the force model, which returns the
+  elastic and dashpot forces. It keeps the whole contact law in one place, but it moves
+  damping out of the algorithm, ties the force model to the velocity each integrator uses
+  ($\mathbf v_n$, $\mathbf v_{n+1/2}$ or $\mathbf v_{n+1}$), and the centered velocity
+  Verlet would still need $\boldsymbol\Gamma$ while the pressure and the rattler rules
+  would still need the table. LAMMPS is organized that way, with an explicit integrator
+  only: its granular pair style reads the velocities from the shared atom arrays and
+  computes the dashpot inside the contact model (our reading of `pair_granular.cpp` and
+  `granular_model.cpp`, 2026-11-24). **SoftPack note.**
+
+The table has one row per contact; a wall contact counts like a pair contact (§2). The
+columns, with what needs each:
+
+| Column | Needed by |
+|---|---|
+| the two particles (a particle and a wall for a wall contact) | the contact network of the rattler rules (§9); which velocities a dashpot uses |
+| unit normal $\hat{\mathbf n}$ | the directions of the dashpot forces; the friction cone of the rattler rules (§9) |
+| lever arms $R_i$, $R_j$ | the slip speed and the rotational rows of $\boldsymbol\Gamma$ (§8) |
+| branch vector $\boldsymbol\ell$ (a wall contact: the vector from the particle's center to the wall, of length $h$) | the pressure (§2) |
+| normal stiffness $k_n(\delta)$ and tangential stiffness $k_t$ | the critical dashpot values (§8); for `Hertzian` and `Mindlin` they change with the overlap |
+| elastic normal force $F_n^\text{el}$ | the pressure (§2), $\langle f_n\rangle$ (§5), the force floor of the rattler rules (§9) |
+| sliding flag | the tangential dashpot is off while it is set (§8) |
+
+- The algorithm forms $\gamma_n$ and $\gamma_t$ from its damping setting, the two
+  stiffnesses and the masses and moments of inertia it holds, and the relative speeds from
+  its velocities, $\hat{\mathbf n}$ and the lever arms. A wall contact uses the particle
+  mass alone, $M_n = m_i$ (§2).
+- The centered velocity Verlet also assembles $\boldsymbol\Gamma$ from the rows, because it
+  solves $\left(\mathbf M + \tfrac{\Delta t}{2}\boldsymbol\Gamma\right)\mathbf v_{n+1} = \ldots$
+  every step (§8, "Integrator"); $\boldsymbol\Gamma$ changes with the sliding flags, so
+  the flags are read before the solve. The lagged velocity Verlet and the semi-implicit
+  Euler only evaluate each dashpot with the velocity they use.
+- The table is not part of the restart state (§6): it is a function of the positions, the
+  box and the contact history, and the force model rebuilds it at every evaluation.
+- Not designed: `coulomb_limit = :total` (§8) caps the tangential force with the total
+  normal force, which includes the normal dashpot that the algorithm computes, and the
+  table does not carry it back. One way is a second call to the force model that passes
+  the normal dashpot forces back.
+- The cost of writing and reading the table, and of assembling $\boldsymbol\Gamma$ from it
+  every step, has not been measured. **SoftPack note.**
+
+**Contact history.** For each contact the force model keeps the tangential spring stretch
+$\xi$ and the sliding flag. At every force evaluation it projects $\xi$ onto the new
+tangent plane, adds the relative tangential displacement of the two contact points over the
+step (from the positions and rotations alone, no velocity), and clips the result at the
+Coulomb cap. The rules:
+
+- Reset: $\xi$ is created at 0 when the contact forms ($\delta > 0$) and set to 0 when the
+  two particles stop overlapping ($\delta \le 0$). It is not reset when the total normal
+  force reaches zero. **SoftPack choice.**
+  - With the default `attractive = false` the total normal force of a damped collision at
+    $\zeta = 0.98$ reaches zero while $\delta > 0$ (§8), and a reset there would erase the
+    spring while the particles still overlap.
+  - [Xiong2019]: the displacement "is set to zero when the pair of disks i and j is no
+    longer in contact". LAMMPS also zeroes the history of every pair that is not touching
+    (our reading of `pair_granular.cpp`, 2026-11-24).
+- Cap: the clip is at $\mu F_n^\text{el}$ with $F_n^\text{el} = k_n\delta$ under
+  `coulomb_limit = :elastic` (the default, §8), and at $\mu F_n$ with the total normal
+  force under `:total`. Under `:elastic` a contact whose total normal force is clipped to
+  zero while it still overlaps therefore still carries tangential force.
+- Slip and sticking: while the update is clipped, $\xi$ sits at the cap,
+  $\xi = \operatorname{sign}(\xi^\text{trial})\,\mu F_n^\text{el}/k_t$ (wiki, Algorithms and
+  combinations). When a later update is not clipped the contact sticks again, and $\xi$
+  continues from the value it had.
+- Sliding flag: the flag is set when the update is clipped and cleared when it is not. It is
+  stored with $\xi$ for every contact, wall contacts included, and saved in the restart
+  state (§6). The algorithm reads the flag stored at the end of the previous step, so
+  $\boldsymbol\Gamma$ is fixed before the centered solve. **SoftPack choice.**
+  - Consequence: the tangential dashpot lags a slip by one step. It is still on in the first
+    step of a slip and still off in the first step after the contact sticks again (§8 lists
+    the overshoot). **SoftPack note.**
+  - The other choice, the flag from the cap in the current evaluation, removes the lag. With
+    `:elastic` it needs only positions, but with `:total` it would depend on the dashpot and
+    need iteration, so one rule was kept for both. **SoftPack note.**
+- Rotation, the same in 2D and 3D: the projection onto the new tangent plane removes the
+  component of $\xi$ along the new normal ([Silbert2001]'s Eq. 5 keeps the spring in the
+  tangent plane as the pair rotates). In 2D it multiplies the scalar $\xi$ by
+  $\hat{\mathbf t}^\text{old}\cdot\hat{\mathbf t}^\text{new} = \cos\Delta\theta_c$, which is
+  second order in the rotation $\Delta\theta_c$ of the contact in one step. **SoftPack
+  choice**: one code path for both dimensions. Whether the projected vector is rescaled to
+  its old length (LAMMPS does) is not designed.
 
 ## 8. Damping
 
@@ -1004,8 +1100,16 @@ pack(algorithm = DampedDynamics(damping = ContactDamping(coulomb_limit = :elasti
 
 - The elastic tangential force is capped at $\mu$ times the elastic normal force,
   $|F_t^\text{el}| \le \mu\,F_n^\text{el}$. A sliding contact carries exactly that
-  force, and its tangential dashpot is off while it slides, so the tangential force
-  never exceeds the Coulomb limit.
+  force, with its tangential dashpot off (the sliding flag, §7).
+- This is not a Coulomb law on the total force while the packing moves. **SoftPack note**
+  (our derivation, wiki Damping page):
+  - While a stuck contact is loaded toward its limit the spring force and the dashpot
+    force point the same way, so the total tangential force can briefly exceed
+    $\mu F_n^\text{el}$ before the contact slips.
+  - The dashpot lags a slip by one step (§7), so the same overshoot can occur in the first
+    step of a slip.
+  - The limit uses $F_n^\text{el}$, so for a separating contact ($v_n > 0$) the sliding
+    force $\mu F_n^\text{el}$ is larger than $\mu$ times the total normal force.
 - Following [Agnolin2007] "We do not introduce any tangential viscous force, and
   impose the Coulomb inequality to elastic force components only." At rest every
   dashpot force is zero, so the finished packing's forces are purely elastic and
@@ -1199,7 +1303,8 @@ separate setting (§14).
 - The stable-step formula of the lagged form is the central-difference result with the damping term lagged: the Code_Aster manual [CodeAster] (§6.2) gives "Δt < 2/ωmax (√(1+ξ²) − ξ)" with ξ the damping ratio, and says the same lagged approximation is valid for weak damping and loses second-order accuracy when damping is large (our translation from the French). [NAFEMSstable] on damping and the stable increment: "one might be tempted to think that it can increase the critical time increment, but we will show that it is not the case, rather the opposite."
 - Velocity Verlet with a velocity-dependent force is first order: [Golshan2023] "When the force depends on the velocity ... the scheme is first-order accurate for both position and velocity", and still more accurate than the explicit Euler in practice.
 - The cost of the centered form: it needs a linear solve over the contacts every step, $\left(\mathbf M + \tfrac{\Delta t}{2}\boldsymbol\Gamma\right)\mathbf v_{n+1} = \mathbf M\mathbf v_{n+1/2} + \tfrac{\Delta t}{2}\mathbf F(\mathbf r_{n+1})$. [Samiei2013] find in DEM that "though the implicit integration enables larger time steps ... the overall speed up is overruled by higher computational costs of the implicit method". **SoftPack note**: the default is to be checked against the cost on packings (a benchmark is planned); if the solve dominates, the default changes.
-- The half-step state is defined per integrator. Only the lagged form has one: the forces and torques of the last evaluation, because they used $\mathbf v_{n-1/2}$. For the other two, the forces and torques are a function of the stored positions, velocities and contact history, and a restart recomputes them. The exact-continuation test (§6) runs for each integrator, and a failure means a piece of state is missing. **SoftPack choice.**
+- The algorithm assembles $\boldsymbol\Gamma$ from the contact table of §7: each contact's normal and tangential dashpot coefficients from its stiffnesses and the masses, its normal and lever arms, and its sliding flag. The force model therefore does not need to know which integrator runs. **SoftPack choice.**
+- The half-step state is defined per integrator. Only the lagged form has one: the forces and torques of the last evaluation, because they used $\mathbf v_{n-1/2}$. For the other two, the forces and torques are a function of the stored positions, velocities and contact history (sliding flags included), and a restart recomputes them. The exact-continuation test (§6) runs for each integrator, and a failure means a piece of state is missing. **SoftPack choice.**
 - Failure mechanism: each integrator blows up when $\Delta t$ exceeds its stable step. The lagged form and the Euler lose stable step as damping grows; the centered form does not. The run-time check of §12 compares $\Delta t$ with the stable step of the chosen integrator and warns; it does not change the step.
 - We did not find a paper that compares these three for relaxing jammed packings with contact dashpots (a few searches, 2026-11-24). Related work: [Rougier2004], [Hanley2016], [Vyas2025] and [deKlerk2022] on DEM integrators, and [Martys1999] and [GronbechJensen2013] on Verlet schemes with velocity-dependent or linear friction forces. A benchmark of the three is planned for the SoftPack paper.
 
@@ -1478,7 +1583,8 @@ FIRE this is the starting step; FIRE then adapts it (§14).
 
 `friction = nothing` (frictionless, §2) is the default. Two friction models are
 options. Keyword names follow §1 (full words, no symbols). How damping and the
-Coulomb limit interact is in §8.
+Coulomb limit interact is in §8. The contact history (when it resets, which normal force
+caps it, the sliding flag and its rotation) is in §7.
 
 ```julia
 pack(friction = CundallStrack(friction_coefficient = 0.5, stiffness_ratio = :matched))

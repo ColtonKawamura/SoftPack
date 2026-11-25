@@ -97,7 +97,7 @@ There is no acceleration to hold over, because the force is computed from the st
 
     - **Blow-up above the stable step**: the stable step shrinks as damping grows, to $0.27\,t_\text{col}$ for one contact at the default $\zeta = 0.98$ and about $0.05\,t_\text{col}$ in the 3D packing worst case, and past it the run diverges.
     - **Accuracy**: first order, so results change with $\Delta t$ more than for the centered form, and more than for lagged velocity Verlet at weak damping.
-    - **Exact restart**: the restart test was run only for the lagged form, and the sliding flags may have to be stored for this integrator.
+    - **Exact restart**: the restart test was run only for the lagged form, and the sliding flags are part of the stored contact history.
 
     **How SoftPack mitigates this**
 
