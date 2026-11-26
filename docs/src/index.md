@@ -3,7 +3,7 @@
 SoftPack is a Julia package for generating jammed packings of soft particles for granular and soft-matter simulations.
 The goal is one well-documented, reproducible place to make packings, so that packings used across studies are built the same way and described by the same metadata.
 
-Status: design stage (no engine code yet). The pages describe the planned interface.
+Status: design stage. The engine implements the default frictionless path (see the README); the pages describe the planned interface.
 
 ## Start here
 
