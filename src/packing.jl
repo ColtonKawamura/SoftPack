@@ -1,17 +1,16 @@
 # ---------------------------------------------------------------------------
-#  What pack() returns (design §11). The field list is PROVISIONAL T-1x2y /
-#  T-196b: the design has not fixed the public fields or the file schema yet.
+#  What pack() returns (design §11). It carries the analysis data, the results
+#  and the full run state (system and control) that write_packing and a restart
+#  need.
 # ---------------------------------------------------------------------------
 
 """
     Packing{D}
 
-The result of `pack()`. It keeps every particle, rattlers included, so another rattler
-rule can be applied later with `find_rattlers(packing, rule)`; `packing.rattlers` marks the
-ones the run's rule removed (`findall(!, packing.rattlers)` lists the rest).
+The result of `pack()`.
 
 Per particle (index = particle id): `positions` (`D` x `N`, inside `[0, box_side)`),
-`diameters`, `masses`, `forces` (net elastic force, `D` x `N`), `rattlers`.
+`diameters`, `masses`, `forces` and `torques` (net elastic), `rattlers`.
 
 Contacts: `contacts`, the contact table of the final state (see `ContactTable`).
 
@@ -26,12 +25,17 @@ Run: `converged`, `stop_reason` (`:converged`, `:steps_max`, `:uphill_max` or
 Scales and provenance: `diameter_reference`, `diameter_mean`, `mass_reference`,
 `settings` (the `PackParams` of the run), `seed`, `random_number_generator`,
 `softpack_version`, `softpack_commit`, `julia_version`.
+
+The full dynamic state (velocities, spins, accelerations, the contact history and the
+compression state) lives in `system` and `control`; `write_packing` and a restart read
+them.
 """
-struct Packing{D}
+struct Packing{D,NR,S,C}
     positions::Matrix{Float64}
     diameters::Vector{Float64}
     masses::Vector{Float64}
     forces::Matrix{Float64}
+    torques::Matrix{Float64}
     rattlers::BitVector
     contacts::ContactTable{D}
     box_side::Float64
@@ -56,9 +60,21 @@ struct Packing{D}
     softpack_version::String
     softpack_commit::String
     julia_version::String
+    system::S
+    control::C
 end
 
 Base.ndims(::Packing{D}) where {D} = D
+rotation_ndims(::Packing{D,NR}) where {D,NR} = NR
+
+"""
+    results(packing) -> RunResults
+
+The scalar results of a packing, in the form the writers use.
+"""
+results(p::Packing) = RunResults(p.pressure, p.packing_fraction, p.contact_number,
+    p.force_residual, p.converged, p.stop_reason, p.diameter_reference, p.diameter_mean,
+    p.mass_reference, p.timestep_start)
 
 function Base.show(io::IO, p::Packing{D}) where {D}
     print(io, "Packing{$D}(", length(p.diameters), " particles, P = ",
@@ -68,7 +84,8 @@ end
 function Base.show(io::IO, ::MIME"text/plain", p::Packing{D}) where {D}
     count = length(p.diameters)
     remaining = count - sum(p.rattlers)
-    println(io, "Packing{$D}: ", count, " particles (", count - remaining, " rattlers removed)")
+    println(io, "Packing{$D}: ", count, " particles (", count - remaining,
+            " rattlers removed)")
     println(io, "  converged        ", p.converged, p.converged ? "" : " ($(p.stop_reason))")
     println(io, "  pressure         ", @sprintf("%.6g", p.pressure),
             " (target ", p.settings.target.value, ")")
@@ -78,7 +95,7 @@ function Base.show(io::IO, ::MIME"text/plain", p::Packing{D}) where {D}
     println(io, "  force residual   ", @sprintf("%.2e", p.force_residual),
             " (max |F_i| / <f_n>)")
     println(io, "  box side         ", @sprintf("%.6g", p.box_side))
-    print(io, "  steps            ", p.steps, " FIRE steps, ", p.compression_steps_accepted,
-          " accepted + ", p.compression_steps_rejected, " rejected compression steps, ",
-          @sprintf("%.2f", p.runtime_seconds), " s")
+    print(io, "  steps            ", p.steps, " steps, ",
+          p.compression_steps_accepted, " accepted + ", p.compression_steps_rejected,
+          " rejected compression steps, ", @sprintf("%.2f", p.runtime_seconds), " s")
 end

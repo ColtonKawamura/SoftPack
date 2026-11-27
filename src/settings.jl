@@ -4,6 +4,8 @@
 #  design's defaults; the section that gives the reason is named on each type.
 # ---------------------------------------------------------------------------
 
+using Dates: Period
+
 # --- Particle sizes (§3) ----------------------------------------------------
 
 abstract type SizeDistribution end
@@ -55,6 +57,46 @@ Base.@kwdef struct Hookean <: ContactLaw
     stiffness::Float64 = 1.0
 end
 
+"""
+    Hertzian(; stiffness = 1.0)
+
+Hertzian repulsion: with overlap `delta > 0` the energy is `(2/5) stiffness * delta^(5/2)`
+and the normal force `stiffness * delta^(3/2)` (design §2: O'Hern's alpha = 5/2 with one
+stiffness for every pair).
+"""
+Base.@kwdef struct Hertzian <: ContactLaw
+    stiffness::Float64 = 1.0
+end
+
+# --- Friction (§13) ---------------------------------------------------------
+
+abstract type FrictionModel end
+
+"""
+    CundallStrack(; friction_coefficient = 0.5, stiffness_ratio = :matched)
+
+A linear tangential spring with Coulomb slip (design §13). `stiffness_ratio` is the
+tangential over the normal stiffness: `:matched` gives 1/3 in 2D and 2/7 in 3D, which makes
+the tangential contact vibration as fast as the normal one; give a number instead for a
+fixed ratio. With `Hertzian` contacts the ratio multiplies the current normal stiffness.
+"""
+Base.@kwdef struct CundallStrack <: FrictionModel
+    friction_coefficient::Float64 = 0.5
+    stiffness_ratio::Union{Symbol,Float64} = :matched
+end
+
+"""
+    Mindlin(; friction_coefficient = 0.5, poisson_ratio = 0.0)
+
+The Hertz-Mindlin tangential force, whose stiffness grows with the overlap (design §13):
+`k_t = eta * k_n` with `eta = 2 (1 - nu) / (2 - nu)` and `nu` the `poisson_ratio`. Needs
+`Hertzian` contacts.
+"""
+Base.@kwdef struct Mindlin <: FrictionModel
+    friction_coefficient::Float64 = 0.5
+    poisson_ratio::Float64 = 0.0
+end
+
 # --- Mass (§4) --------------------------------------------------------------
 
 abstract type MassRule end
@@ -68,6 +110,17 @@ struct EqualMass <: MassRule
     mass::Float64
 end
 EqualMass() = EqualMass(1.0)
+
+"""
+    Density(density = 1.0)
+
+Mass from a material density times the particle's area (a disk, 2D) or volume (a sphere,
+3D) (design §4).
+"""
+struct Density <: MassRule
+    density::Float64
+end
+Density() = Density(1.0)
 
 # --- Target, box, start and protocol (§2) -----------------------------------
 
@@ -93,6 +146,18 @@ A periodic square (2D) or cube (3D) box (design §2).
 """
 struct Periodic <: Boundary end
 
+"""
+    Walls(; friction = true)
+
+A flat, rigid wall on every side of the box (design §2), using the particle `contact` law
+and stiffness. With `friction = true` and a `friction` model set, a wall contact carries
+the same model and its own tangential spring; `friction = false` keeps wall contacts
+normal-only. Without a friction model the walls are frictionless either way.
+"""
+Base.@kwdef struct Walls <: Boundary
+    friction::Bool = true
+end
+
 abstract type InitialState end
 
 """
@@ -111,7 +176,8 @@ abstract type Protocol end
     IsotropicCompression(; strain_step = 1e-2)
 
 Shrink every side of the box by the factor `1 - strain_step`, minimize, read the pressure;
-accept below the pressure band, halve the step and retry above it (design §2).
+accept below the pressure band, halve the step and retry above it (design §2). With
+`Walls` the walls move with the box.
 """
 Base.@kwdef struct IsotropicCompression <: Protocol
     strain_step::Float64 = 1e-2
@@ -125,14 +191,44 @@ abstract type ConvergenceTest end
     RelativeForce(; tolerance = 1e-8)
 
 A minimization has converged when every particle's net elastic force is below
-`tolerance` times the mean normal contact force (design §5). The default 1e-8 is
-provisional until it has been timed on frictional packings (card T-2brz, option 1).
+`tolerance` times the mean normal contact force, and with friction every net torque below
+`tolerance` times the mean force times the mean diameter (design §5). The default 1e-8 is
+provisional until it has been timed on frictional packings (card T-2brz).
 """
 Base.@kwdef struct RelativeForce <: ConvergenceTest
     tolerance::Float64 = 1e-8   # PROVISIONAL T-2brz: kept, frictional timing is a release gate
 end
 
-# --- Algorithm (§7, §14) ----------------------------------------------------
+"""
+    LeidenAcceleration(; tolerance = 1e-10)
+
+The Leiden rule: every particle's acceleration below `tolerance`, in reduced units
+(design §5). It replaces the `RelativeForce` test; the pressure band still applies.
+"""
+Base.@kwdef struct LeidenAcceleration <: ConvergenceTest
+    tolerance::Float64 = 1e-10
+end
+
+"""
+    KineticEnergy(; tolerance = 1e-8)
+
+The `RelativeForce` test at its default tolerance and a mean kinetic energy per particle
+below `tolerance * P_target * d_ref^D` (design §5).
+"""
+Base.@kwdef struct KineticEnergy <: ConvergenceTest
+    tolerance::Float64 = 1e-8
+end
+
+"""
+    RestartTest()
+
+The `RelativeForce` test at its default tolerance, then once on the final packing zero the
+velocities and check that the kinetic energy and the unbalanced forces do not grow back
+(design §5). It is the check for saddles.
+"""
+struct RestartTest <: ConvergenceTest end
+
+# --- Algorithms (§7, §8, §14) -----------------------------------------------
 
 abstract type Algorithm end
 
@@ -145,7 +241,9 @@ abstract type Algorithm end
 FIRE 2.0 with the LAMMPS `min_style fire` defaults (design §14). `timestep_max` and
 `timestep_min` are multiples of the starting step. The step rules follow Algorithm 2 of
 the wiki's FIRE settings page, which matches LAMMPS `min_fire.cpp` (card T-vcne,
-option 1).
+option 1). With friction FIRE also integrates the spins; the design allows the
+combination and records it as non-standard (§7). `damping` and `drag` are accepted but off
+by default, since FIRE's own velocity rules remove energy.
 """
 Base.@kwdef struct FIRE <: Algorithm
     timestep_max::Float64 = 10.0
@@ -163,6 +261,89 @@ Base.@kwdef struct FIRE <: Algorithm
     drag::Any = nothing
 end
 
+"""
+    DampedDynamics(; integrator = :centered_velocity_verlet,
+                     damping = ContactDamping(), drag = nothing)
+
+Damped molecular dynamics (design §8). The `integrator` is `:centered_velocity_verlet`
+(default), `:lagged_velocity_verlet` or `:semi_implicit_euler`; they differ in which
+velocity the dashpot uses. `damping` is `ContactDamping`, `ViscousRate`,
+`RelativeVelocityDamping` or `nothing`; `drag` is `StokesDrag(...)` or `nothing`.
+"""
+Base.@kwdef struct DampedDynamics <: Algorithm
+    integrator::Symbol = :centered_velocity_verlet
+    damping::Any = ContactDamping()
+    drag::Any = nothing
+end
+
+# --- Damping (§8) -----------------------------------------------------------
+
+abstract type DampingModel end
+
+"""
+    ContactDamping(; normal = 0.98, tangential = 0.98, tangential_mass = :with_rotation,
+                     attractive = false, coulomb_limit = :elastic)
+
+Contact dashpots, each a `normal` or `tangential` fraction of its own critical value
+(design §8). `tangential_mass = :with_rotation` measures the tangential critical value on
+the true sliding mass (the particle rotation included), `:pair` on the pair's reduced
+mass. `attractive = false` never lets the normal dashpot pull. `coulomb_limit = :elastic`
+caps the friction at the elastic normal force.
+"""
+Base.@kwdef struct ContactDamping <: DampingModel
+    normal::Float64 = 0.98
+    tangential::Float64 = 0.98
+    tangential_mass::Symbol = :with_rotation
+    attractive::Bool = false
+    coulomb_limit::Symbol = :elastic
+end
+
+"""
+    ViscousRate(; normal = 0.5, tangential = 0.5, attractive = false,
+                  coulomb_limit = :elastic)
+
+Raw contact damping rates: dashpot force `-gamma * v` with `gamma = m_eff * rate`, in units
+of `1/tau` with `tau = sqrt(m_ref / k)` (design §8). `m_eff` is the pair's reduced mass in
+both directions, the LAMMPS convention.
+"""
+Base.@kwdef struct ViscousRate <: DampingModel
+    normal::Float64 = 0.5
+    tangential::Float64 = 0.5
+    attractive::Bool = false
+    coulomb_limit::Symbol = :elastic
+end
+
+"""
+    RelativeVelocityDamping(; rate = 0.5, attractive = false, coulomb_limit = :elastic)
+
+One dashpot on the full relative velocity of the two centers,
+`F = -gamma (v_i - v_j)` with `gamma = m_eff * rate` (design §8). It applies no torque.
+"""
+Base.@kwdef struct RelativeVelocityDamping <: DampingModel
+    rate::Float64 = 0.5
+    attractive::Bool = false
+    coulomb_limit::Symbol = :elastic
+end
+
+# --- Drag (§8) --------------------------------------------------------------
+
+abstract type DragModel end
+
+"""
+    StokesDrag(; velocity, spin = velocity, during = :always)
+
+Stokes drag on each particle: force `-velocity * m * v` and torque `-spin * I * omega`,
+with the rates in units of `1/tau` (design §8). `velocity` has no default. `during` is
+`:always` or `:compression` (on until the pressure first lies in the band).
+"""
+struct StokesDrag <: DragModel
+    velocity::Float64
+    spin::Float64
+    during::Symbol
+end
+StokesDrag(; velocity, spin = velocity, during = :always) =
+    StokesDrag(velocity, spin, during)
+
 # --- Time step (§12) --------------------------------------------------------
 
 abstract type TimestepRule end
@@ -171,7 +352,8 @@ abstract type TimestepRule end
     CollisionTime(; fraction = 1/50)
 
 The starting step is `fraction` of the shortest binary collision time
-`pi * sqrt(m_eff / k)`, with `m_eff` the reduced mass of the lightest pair (design §12;
+`pi * sqrt(m_eff / k)`, with `m_eff` the reduced mass of the lightest pair and `k` the
+stiffest contact, tangential with rotation included when friction is on (design §12;
 card T-d66w, option 1).
 """
 Base.@kwdef struct CollisionTime <: TimestepRule
@@ -187,11 +369,92 @@ abstract type RattlerRule end
 
 Repeatedly remove particles with fewer than `D + 1` contacts when frictionless (`D` the
 dimension) or fewer than 2 when frictional, until no particle changes (design §9; card
-T-hg7w, option 1). The cone test only acts on frictional two-contact particles, so it
-changes nothing in a frictionless packing.
+T-hg7w, option 1). With `cone_test`, a two-contact particle is also removed when no
+forces inside its friction cones can hold it.
 """
 Base.@kwdef struct ContactCount <: RattlerRule
     cone_test::Bool = true
+end
+
+"""
+    TwoContact(; cone_test = true)
+
+Repeatedly remove particles with two or fewer contacts (design §9).
+"""
+Base.@kwdef struct TwoContact <: RattlerRule
+    cone_test::Bool = true
+end
+
+"""
+    ForceFloor(; floor = 1e-3, cone_test = true)
+
+Contacts with force below `floor` times the mean contact force count as broken, then
+particles with fewer than two contacts are removed (design §9).
+"""
+Base.@kwdef struct ForceFloor <: RattlerRule
+    floor::Float64 = 1e-3
+    cone_test::Bool = true
+end
+
+"""
+    Unresolved(; floor = :tolerance, cone_test = true)
+
+Remove particles whose contacts all carry less than the packing's force tolerance
+(design §9). `floor = :tolerance` ties the floor to the packing's own stopping rule; give a
+number for a fixed force.
+"""
+Base.@kwdef struct Unresolved <: RattlerRule
+    floor::Union{Symbol,Float64} = :tolerance
+    cone_test::Bool = true
+end
+
+# --- Recording (§6, §11) ----------------------------------------------------
+
+RestartFile(path::AbstractString; every) = RestartFile(path, every)
+
+"""
+    Interval
+
+A recording interval: a number of steps, or a `Dates.Period` of wall-clock time.
+"""
+const Interval = Union{Integer,Period}
+
+"""
+    Snapshots(; every)
+
+Record the particle positions every `every` steps (or wall-clock `every`) during the run
+(design §11). `write_packing` stores them.
+"""
+Base.@kwdef struct Snapshots
+    every::Interval
+end
+
+"""
+    Movie(path; every, size = 640, fps = 25)
+
+Render a frame every `every` steps (or wall-clock `every`) during the run and encode them
+into `path` with ffmpeg at the end (design §11). The image is `size` pixels wide; `.gif`
+and `.mp4` are understood.
+"""
+Base.@kwdef struct Movie
+    path::String
+    every::Interval
+    size::Int = 640
+    fps::Int = 25
+end
+
+Movie(path::AbstractString; every, size::Int = 640, fps::Int = 25) =
+    Movie(path, every, size, fps)
+
+"""
+    RestartFile(path; every)
+
+Save the run's full state to `path` every `every` steps (or wall-clock `every`), and again
+when the run stops (design §6). `restart_packing = path` continues from such a file.
+"""
+Base.@kwdef struct RestartFile
+    path::String
+    every::Interval
 end
 
 # --- All settings ------------------------------------------------------------
@@ -200,9 +463,7 @@ end
     PackParams(; kwargs...)
 
 Every setting of `pack()`, with the design's defaults (design §0). `pack(params)` runs it;
-`pack(; kwargs...)` builds one from keywords. Keywords that the design lists but this
-build does not implement yet are accepted here and rejected by `pack()` with an error
-that names them.
+`pack(; kwargs...)` builds one from keywords.
 """
 Base.@kwdef struct PackParams
     dimension::Int = 2
@@ -231,12 +492,8 @@ Base.@kwdef struct PackParams
 end
 
 function not_implemented(setting::AbstractString, value)
-    throw(ArgumentError(
-        "$setting = $(repr(value)) is designed but not implemented yet. This build " *
-        "implements the frictionless default path: Hookean contacts, EqualMass, " *
-        "Pressure target, Periodic box, Dilute start, IsotropicCompression, " *
-        "RelativeForce, FIRE with the semi-implicit Euler integrator and no damping or " *
-        "drag, ContactCount or `nothing` or a function for the rattlers."))
+    throw(ArgumentError("$setting = $(repr(value)) is designed but not implemented yet; " *
+                        "see docs/design-references.md for the list of settings."))
 end
 
 """
@@ -257,41 +514,42 @@ function validate(p::PackParams)
             throw(ArgumentError("every diameter in particles_diameters must be positive"))
     end
     validate_distribution(p.particles_size_distribution)
-    p.contact isa Hookean || not_implemented("contact", p.contact)
+    (p.contact isa Hookean || p.contact isa Hertzian) || not_implemented("contact", p.contact)
     p.contact.stiffness > 0 || throw(ArgumentError("stiffness must be positive"))
-    p.friction === nothing || not_implemented("friction", p.friction)
-    p.mass isa EqualMass || not_implemented("mass", p.mass)
-    p.mass.mass > 0 || throw(ArgumentError("EqualMass needs a positive mass"))
+    validate_friction(p.friction, p.contact)
+    (p.mass isa EqualMass || p.mass isa Density) || not_implemented("mass", p.mass)
+    p.mass isa EqualMass && p.mass.mass <= 0 &&
+        throw(ArgumentError("EqualMass needs a positive mass"))
+    p.mass isa Density && p.mass.density <= 0 &&
+        throw(ArgumentError("Density needs a positive density"))
     p.target isa Pressure || not_implemented("target", p.target)
     p.target.value > 0 || throw(ArgumentError("the target pressure must be positive"))
-    p.boundary isa Periodic || not_implemented("boundary", p.boundary)
+    (p.boundary isa Periodic || p.boundary isa Walls) ||
+        not_implemented("boundary", p.boundary)
     p.initial_state isa Dilute || not_implemented("initial_state", p.initial_state)
     0 < p.initial_state.packing_fraction < 1 ||
         throw(ArgumentError("Dilute packing_fraction must lie between 0 and 1"))
     p.protocol isa IsotropicCompression || not_implemented("protocol", p.protocol)
     0 < p.protocol.strain_step < 1 ||
         throw(ArgumentError("strain_step must lie between 0 and 1"))
-    p.convergence isa RelativeForce || not_implemented("convergence", p.convergence)
-    p.convergence.tolerance > 0 || throw(ArgumentError("tolerance must be positive"))
+    validate_convergence(p.convergence)
     p.pressure_tolerance > 0 || throw(ArgumentError("pressure_tolerance must be positive"))
     p.steps_max >= 1 || throw(ArgumentError("steps_max must be at least 1"))
     p.failure_action in (:warn, :error) ||
         throw(ArgumentError("failure_action must be :warn or :error"))
-    p.restart_packing === nothing || not_implemented("restart_packing", p.restart_packing)
-    p.restart_file === nothing || not_implemented("restart_file", p.restart_file)
-    p.algorithm isa FIRE || not_implemented("algorithm", p.algorithm)
-    p.algorithm.integrator === :semi_implicit_euler ||
-        not_implemented("FIRE integrator", p.algorithm.integrator)
-    p.algorithm.damping === nothing || not_implemented("FIRE damping", p.algorithm.damping)
-    p.algorithm.drag === nothing || not_implemented("FIRE drag", p.algorithm.drag)
+    (p.restart_packing === nothing || p.restart_packing isa AbstractString) ||
+        not_implemented("restart_packing", p.restart_packing)
+    (p.restart_file === nothing || p.restart_file isa RestartFile) ||
+        not_implemented("restart_file", p.restart_file)
+    validate_algorithm(p.algorithm)
     p.timestep isa CollisionTime || p.timestep isa Real ||
         throw(ArgumentError("timestep must be CollisionTime(...) or a number"))
     (p.timestep isa CollisionTime ? p.timestep.fraction : p.timestep) > 0 ||
         throw(ArgumentError("the time step must be positive"))
-    p.rattlers === nothing || p.rattlers isa ContactCount || p.rattlers isa Function ||
-        not_implemented("rattlers", p.rattlers)
-    p.snapshots === nothing || not_implemented("snapshots", p.snapshots)
-    p.movie === nothing || not_implemented("movie", p.movie)
+    validate_rattlers(p.rattlers)
+    (p.snapshots === nothing || p.snapshots isa Snapshots) ||
+        not_implemented("snapshots", p.snapshots)
+    (p.movie === nothing || p.movie isa Movie) || not_implemented("movie", p.movie)
     return p
 end
 
@@ -309,4 +567,97 @@ end
 function validate_distribution(d::Monodisperse)
     d.diameter > 0 || throw(ArgumentError("diameter must be positive"))
     return d
+end
+
+function validate_friction(friction, contact)
+    friction === nothing && return friction
+    (friction isa CundallStrack || friction isa Mindlin) ||
+        not_implemented("friction", friction)
+    friction.friction_coefficient >= 0 ||
+        throw(ArgumentError("friction_coefficient must be non-negative"))
+    if friction isa CundallStrack && friction.stiffness_ratio isa Real
+        friction.stiffness_ratio > 0 ||
+            throw(ArgumentError("stiffness_ratio must be positive"))
+    end
+    friction isa Mindlin && !(contact isa Hertzian) &&
+        throw(ArgumentError("Mindlin friction needs Hertzian contacts (design §13)"))
+    friction isa Mindlin && !(-1 < friction.poisson_ratio < 0.5) &&
+        throw(ArgumentError("poisson_ratio must lie between -1 and 0.5"))
+    return friction
+end
+
+function validate_convergence(test)
+    (test isa RelativeForce || test isa LeidenAcceleration || test isa KineticEnergy ||
+     test isa RestartTest || test isa Function) || not_implemented("convergence", test)
+    hasproperty(test, :tolerance) && test.tolerance <= 0 &&
+        throw(ArgumentError("tolerance must be positive"))
+    return test
+end
+
+function validate_algorithm(algorithm)
+    if algorithm isa FIRE
+        algorithm.integrator === :semi_implicit_euler ||
+            not_implemented("FIRE integrator", algorithm.integrator)
+        validate_damping(algorithm.damping)
+        validate_drag(algorithm.drag)
+        return algorithm
+    end
+    algorithm isa DampedDynamics || not_implemented("algorithm", algorithm)
+    algorithm.integrator in (:centered_velocity_verlet, :lagged_velocity_verlet,
+                             :semi_implicit_euler) ||
+        throw(ArgumentError("integrator must be :centered_velocity_verlet, " *
+                            ":lagged_velocity_verlet or :semi_implicit_euler, got " *
+                            "$(algorithm.integrator)"))
+    validate_damping(algorithm.damping)
+    validate_drag(algorithm.drag)
+    return algorithm
+end
+
+function validate_damping(damping)
+    damping === nothing && return damping
+    (damping isa ContactDamping || damping isa ViscousRate ||
+     damping isa RelativeVelocityDamping) || not_implemented("damping", damping)
+    if damping isa ContactDamping
+        (damping.normal >= 0 && damping.tangential >= 0) ||
+            throw(ArgumentError("damping ratios must be non-negative"))
+        damping.tangential_mass in (:with_rotation, :pair) ||
+            throw(ArgumentError("tangential_mass must be :with_rotation or :pair"))
+    elseif damping isa ViscousRate
+        (damping.normal >= 0 && damping.tangential >= 0) ||
+            throw(ArgumentError("damping rates must be non-negative"))
+    else
+        damping.rate >= 0 || throw(ArgumentError("the damping rate must be non-negative"))
+    end
+    if getproperty(damping, :coulomb_limit) === :total
+        throw(ArgumentError("coulomb_limit = :total is designed but not implemented yet: " *
+                            "it needs the normal dashpot back from the algorithm (§7). " *
+                            "Use the default :elastic."))
+    end
+    getproperty(damping, :coulomb_limit) === :elastic ||
+        throw(ArgumentError("coulomb_limit must be :elastic (the only value implemented)"))
+    return damping
+end
+
+function validate_drag(drag)
+    drag === nothing && return drag
+    drag isa StokesDrag || not_implemented("drag", drag)
+    (drag.velocity >= 0 && drag.spin >= 0) ||
+        throw(ArgumentError("drag rates must be non-negative"))
+    drag.during in (:always, :compression) ||
+        throw(ArgumentError("during must be :always or :compression"))
+    return drag
+end
+
+function validate_rattlers(rattlers)
+    rattlers === nothing && return rattlers
+    (rattlers isa ContactCount || rattlers isa TwoContact || rattlers isa ForceFloor ||
+     rattlers isa Unresolved || rattlers isa Function) ||
+        not_implemented("rattlers", rattlers)
+    if rattlers isa ForceFloor
+        rattlers.floor >= 0 || throw(ArgumentError("ForceFloor floor must be non-negative"))
+    elseif rattlers isa Unresolved
+        rattlers.floor isa Symbol && rattlers.floor !== :tolerance &&
+            throw(ArgumentError("Unresolved floor must be :tolerance or a force"))
+    end
+    return rattlers
 end

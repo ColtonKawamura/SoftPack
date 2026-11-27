@@ -16,9 +16,9 @@ and $a$, $b$ the mass- and stiffness-proportional constants of the damping matri
 $\boldsymbol\Gamma = a\mathbf M + b\mathbf K$. The full derivations are in the
 [wiki](https://github.com/ColtonKawamura/SoftPack/wiki), one page per section.
 
-Status: design stage. The engine in `src/` implements the default frictionless path (see
-the README); choices still open are coded provisionally and marked `PROVISIONAL` in the
-source. Last updated 2026-11-26. Every setting has
+Status: design stage. The engine in `src/` implements every setting of this document;
+choices still open are coded provisionally and marked `PROVISIONAL` in the source. Last
+updated 2026-11-27. Every setting has
 a default and a reason (§0), including how `pack()` reaches the target pressure
 (the boundary, the initial state and the compression protocol, §2).
 

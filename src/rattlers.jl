@@ -6,62 +6,176 @@
     find_rattlers(packing, rule) -> BitVector
 
 Apply a rattler rule to a finished packing; `true` marks a rattler. `rule` is
-`ContactCount(...)`, `nothing` (no rattlers) or any function that takes the `Packing` and
-returns one `Bool` per particle (PROVISIONAL T-hg7w / T-1x2y: the design says "a function
-of the contact network" and has not fixed its argument).
+`ContactCount(...)`, `TwoContact(...)`, `ForceFloor(...)`, `Unresolved(...)`, `nothing`
+(no rattlers) or any function that takes the `Packing` and returns one `Bool` per particle
+(PROVISIONAL T-hg7w / T-1x2y: the design says "a function of the contact network" and has
+not fixed its argument).
 """
-find_rattlers(p::Packing{D}, rule) where {D} =
-    find_rattlers(rule, p.contacts, length(p.diameters), D, p.settings.friction !== nothing)
+find_rattlers(p::Packing, rule) =
+    find_rattlers(rule, p.contacts, length(p.diameters), p.settings)
 
 find_rattlers(p::Packing, rule::Function) = BitVector(rule(p))
 
-find_rattlers(::Nothing, table::ContactTable, count::Int, dimension::Int, frictional::Bool) =
-    falses(count)
+find_rattlers(::Nothing, table::ContactTable, count::Int, settings) = falses(count)
 
 """
-    find_rattlers(rule::ContactCount, table, count, dimension, frictional) -> BitVector
+    friction_coefficient(settings) -> Union{Nothing,Float64}
 
-Remove particles with fewer than `D + 1` contacts (frictionless) or 2 (frictional), then
-repeat on the remaining network until no particle changes (card T-hg7w, option 1). Each
-removal lowers its neighbors' counts, so the removals cascade.
+The friction coefficient of a run, or `nothing` when frictionless.
 """
-function find_rattlers(rule::ContactCount, table::ContactTable, count::Int,
-                       dimension::Int, frictional::Bool)
-    frictional && not_implemented("ContactCount with friction (cone test)", rule)
-    minimum_contacts = dimension + 1
-    neighbors = [Int[] for _ in 1:count]
-    for c in eachindex(table.first)
-        push!(neighbors[table.first[c]], table.second[c])
-        push!(neighbors[table.second[c]], table.first[c])
-    end
-    contacts = length.(neighbors)
+friction_coefficient(settings) =
+    settings.friction === nothing ? nothing : settings.friction.friction_coefficient
+
+"""
+    rule_minimum(rule, dimension, frictional)
+
+The fewest contacts a particle needs under the rule: `D + 1` frictionless or 2 with
+friction for `ContactCount`, 3 for `TwoContact` (removes two or fewer), 2 for
+`ForceFloor` and `Unresolved`.
+"""
+rule_minimum(::ContactCount, dimension::Int, frictional::Bool) =
+    frictional ? 2 : dimension + 1
+rule_minimum(::TwoContact, dimension::Int, frictional::Bool) = 3
+rule_minimum(::ForceFloor, dimension::Int, frictional::Bool) = 2
+rule_minimum(::Unresolved, dimension::Int, frictional::Bool) = 2
+
+"""
+    effective_floor(rule, mean_force, settings)
+
+The force below which a contact counts as broken: none for the count rules, `floor *
+<f>` for `ForceFloor`, and the packing's own tolerance times `<f>` for `Unresolved`
+(design §9).
+"""
+effective_floor(::ContactCount, mean_force::Float64, settings) = -Inf
+effective_floor(::TwoContact, mean_force::Float64, settings) = -Inf
+effective_floor(rule::ForceFloor, mean_force::Float64, settings) = rule.floor * mean_force
+function effective_floor(rule::Unresolved, mean_force::Float64, settings)
+    floor = rule.floor === :tolerance ?
+        convergence_tolerance(settings) * mean_force : Float64(rule.floor)
+    return floor
+end
+
+"""
+    find_rattlers(rule, table, count, settings) -> BitVector
+
+Every rule builds the effective contact network (contacts below its force floor count as
+broken), removes particles with too few contacts, repeats until nothing changes (card
+T-hg7w, option 1), and then runs the cone test on two-contact particles when
+`cone_test = true` (design §9).
+"""
+function find_rattlers(rule::RattlerRule, table::ContactTable, count::Int, settings)
+    mean_force = mean_normal_force(table)
+    threshold = effective_floor(rule, mean_force, settings)
+    minimum = rule_minimum(rule, settings.dimension, settings.friction !== nothing)
+    μ = friction_coefficient(settings)
+    cone = rule isa ContactCount && rule.cone_test && μ !== nothing
     rattler = falses(count)
-    queue = [i for i in 1:count if contacts[i] < minimum_contacts]
-    rattler[queue] .= true
+    while true
+        neighbors = [Int[] for _ in 1:count]
+        directions = [similar(table.normals, 0) for _ in 1:count]
+        for c in eachindex(table.first)
+            table.normal_forces[c] > threshold || continue
+            i = table.first[c]
+            j = table.second[c]
+            rattler[i] && continue
+            (j != 0 && rattler[j]) && continue
+            push!(neighbors[i], j)
+            push!(directions[i], -table.normals[c])   # center of i to the contact point
+            if j != 0
+                push!(neighbors[j], i)
+                push!(directions[j], table.normals[c])  # center of j to the contact point
+            end
+        end
+        changed = false
+        for i in 1:count
+            if !rattler[i] && length(neighbors[i]) < minimum
+                rattler[i] = true
+                changed = true
+            end
+        end
+        if cone
+            limit = pi - 2 * atan(μ)
+            for i in 1:count
+                rattler[i] && continue
+                length(neighbors[i]) == 2 || continue
+                cosine = clamp(dot_in_order(directions[i][1], directions[i][2]), -1.0, 1.0)
+                if acos(cosine) < limit
+                    rattler[i] = true
+                    changed = true
+                end
+            end
+        end
+        changed || break
+    end
+    return rattler
+end
+
+convergence_tolerance(settings) =
+    hasproperty(settings.convergence, :tolerance) ? settings.convergence.tolerance : 1e-8
+
+"""
+    remove_by_count!(rattler, neighbors, minimum) -> Bool
+
+Queue every particle below the minimum contact count, then cascade: removing a particle
+decrements its neighbors' counts.
+"""
+function remove_by_count!(rattler::BitVector, neighbors, minimum::Int)
+    count = length(rattler)
+    contacts = [length(neighbors[i]) for i in 1:count]
+    queue = Int[]
+    for i in 1:count
+        if !rattler[i] && contacts[i] < minimum
+            rattler[i] = true
+            push!(queue, i)
+        end
+    end
     while !isempty(queue)
         i = pop!(queue)
         for j in neighbors[i]
             rattler[j] && continue
             contacts[j] -= 1
-            if contacts[j] < minimum_contacts
+            if contacts[j] < minimum
                 rattler[j] = true
                 push!(queue, j)
             end
         end
     end
-    return rattler
+    return !isempty(queue) || any(rattler)
+end
+
+"""
+    remove_by_cone!(rattler, neighbors, normals, mu) -> Bool
+
+Remove every remaining two-contact particle whose two contact directions are closer than
+`pi - 2 arctan(mu)` (design §9, "cone test"): the friction cones cannot hold it.
+"""
+function remove_by_cone!(rattler::BitVector, neighbors, normals, mu::Float64)
+    limit = pi - 2 * atan(mu)
+    changed = false
+    for i in eachindex(rattler)
+        rattler[i] && continue
+        length(neighbors[i]) == 2 || continue
+        cosine = clamp(dot_in_order(normals[i][1], normals[i][2]), -1.0, 1.0)
+        if acos(cosine) < limit
+            rattler[i] = true
+            changed = true
+        end
+    end
+    return changed
 end
 
 """
     contact_number(table, rattlers) -> Float64
 
 Mean number of contacts per remaining particle, counting only contacts between two
-remaining particles.
+remaining particles. A wall contact counts like a pair contact (PROVISIONAL: design §2
+leaves this open for `Walls`).
 """
 function contact_number(table::ContactTable, rattlers::BitVector)
     remaining = count(!, rattlers)
     remaining == 0 && return 0.0
-    kept = count(c -> !rattlers[table.first[c]] && !rattlers[table.second[c]],
+    kept = count(c -> !rattlers[table.first[c]] &&
+                       (table.second[c] == 0 || !rattlers[table.second[c]]),
                  eachindex(table.first))
     return 2 * kept / remaining
 end

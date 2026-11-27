@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-#  Diameters, the reference scales and masses (design §3, §4).
+#  Diameters, the reference scales, masses and moments of inertia (design §3, §4).
 # ---------------------------------------------------------------------------
 
 """
@@ -59,13 +59,37 @@ total_volume(diameters::Vector{Float64}, dimension::Int) =
 
 """
     particle_masses(rule, diameters, dimension) -> Vector{Float64}
+
+`EqualMass`: the same mass for every particle. `Density`: the density times each
+particle's area (2D) or volume (3D) (design §4).
 """
 particle_masses(rule::EqualMass, diameters::Vector{Float64}, dimension::Int) =
     fill(rule.mass, length(diameters))
 
+particle_masses(rule::Density, diameters::Vector{Float64}, dimension::Int) =
+    [rule.density * particle_volume(d, dimension) for d in diameters]
+
 """
     mass_reference(rule, masses)
 
-The mass scale `m_ref` (design §4): the `EqualMass` value.
+The mass scale `m_ref` (design §4): the `EqualMass` value, or the mean mass with
+`Density`.
 """
 mass_reference(rule::EqualMass, masses) = rule.mass
+mass_reference(rule::Density, masses) = sum_in_order(masses) / length(masses)
+
+"""
+    moment_of_inertia(mass, diameter, dimension)
+
+A uniform disk or sphere has `I = kappa m R^2` with `R = d/2`, `kappa = 1/2` in 2D and
+`kappa = 2/5` in 3D (design §4).
+"""
+moment_of_inertia(mass::Float64, diameter::Float64, dimension::Int) =
+    dimension == 2 ? mass * diameter^2 / 8 : mass * diameter^2 / 10
+
+"""
+    inertia_ratio(dimension)
+
+`m R^2 / I = 1 / kappa`: 2 in 2D (disks) and 5/2 in 3D (spheres) (design §4).
+"""
+inertia_ratio(dimension::Int) = dimension == 2 ? 2.0 : 2.5

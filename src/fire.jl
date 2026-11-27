@@ -12,6 +12,11 @@
 #  LAMMPS details: the mixing acts on the kicked velocity, its magnitude is |v|
 #  from before the kick, and the forces are evaluated again after the half step
 #  back.
+#
+#  With friction FIRE also integrates the spins and it accepts the damping and
+#  drag settings of §8; the design allows both combinations and records FIRE with
+#  friction as non-standard (§7). PROVISIONAL T-vcne: the rotational part of the
+#  mixing uses |omega| and the torque direction.
 # ---------------------------------------------------------------------------
 
 """
@@ -71,31 +76,39 @@ function uphill!(st::FireState, fire::FIRE, step::Int)
 end
 
 """
-    minimize!(system, fire, timestep_start, test, force_floor, steps_left)
+    minimize!(system, fire, timestep_start, test, context, steps_left, drag_on)
         -> (status, steps)
 
 Minimize the energy at the current box with FIRE, from rest with every counter reset,
 until `test` holds (`status = :converged`), more than `uphill_max` uphill steps come in a
 row (`:uphill_max`), or `steps_left` steps have been taken (`:steps_max`). The integrator
-is the semi-implicit Euler scheme. The convergence test runs after every step.
+is the semi-implicit Euler scheme; the convergence test runs after every step.
 """
-function minimize!(s::System{D}, fire::FIRE, timestep_start::Float64, test,
-                   force_floor::Float64, steps_left::Int) where {D}
+function minimize!(s::System{D,NR}, fire::FIRE, timestep_start::Float64, test,
+                   ctx::ConvergenceContext, control::RunControl{D}, drag_on::Bool,
+                   steps_left::Int) where {D,NR}
     st = FireState(fire, timestep_start)
-    positions, velocities, forces, masses = s.positions, s.velocities, s.forces, s.masses
+    positions, velocities, spins = s.positions, s.velocities, s.spins
     fill!(velocities, zero(SVector{D,Float64}))
+    fill!(spins, zero(SVector{NR,Float64}))
     evaluate_forces!(s)
+    total_force = similar(s.forces)
+    total_torque = similar(s.torques)
     step = 0
     while step < steps_left
         step += 1
+        control.step += 1
+        total_forces!(total_force, total_torque, s, fire, velocities, spins, drag_on)
         power = 0.0
-        @inbounds for i in eachindex(forces)
-            power += dot_in_order(forces[i], velocities[i])
+        @inbounds for i in eachindex(s.forces)
+            power += dot_in_order(total_force[i], velocities[i])
+            power += dot_in_order(total_torque[i], spins[i])
         end
         if power > 0
             downhill!(st, fire)
             mix = true
-            speed = sqrt(sum_in_order(v -> dot_in_order(v, v), velocities))   # |v| before the kick
+            speed = sqrt(sum_in_order(v -> dot_in_order(v, v), velocities))
+            spin_speed = sqrt(sum_in_order(w -> dot_in_order(w, w), spins))
         else
             uphill!(st, fire, step) && return (:uphill_max, step)
             if fire.inertia_correction                       # half step back, new step size
@@ -105,30 +118,40 @@ function minimize!(s::System{D}, fire::FIRE, timestep_start::Float64, test,
                 end
             end
             fill!(velocities, zero(SVector{D,Float64}))
+            fill!(spins, zero(SVector{NR,Float64}))
             evaluate_forces!(s)
+            total_forces!(total_force, total_torque, s, fire, velocities, spins, drag_on)
             mix = false
             speed = 0.0
+            spin_speed = 0.0
         end
         dt = st.timestep
         @inbounds for i in eachindex(velocities)             # kick
-            velocities[i] += (dt / masses[i]) * forces[i]
+            velocities[i] += (dt / s.masses[i]) * total_force[i]
+            spins[i] += (dt / s.moments[i]) * total_torque[i]
         end
         if mix
-            force_norm = sqrt(sum_in_order(f -> dot_in_order(f, f), forces))
+            force_norm = sqrt(sum_in_order(f -> dot_in_order(f, f), total_force))
+            torque_norm = sqrt(sum_in_order(t -> dot_in_order(t, t), total_torque))
             keep = 1 - st.mixing
-            # PROVISIONAL T-vcne (F = 0 case): the force term is dropped only when the net
-            # force is exactly zero. LAMMPS drops it below |F|^2 = 1e-20, a cutoff in its own
+            # PROVISIONAL T-vcne (F = 0 case): a term is dropped only when the net force or
+            # torque is exactly zero. LAMMPS drops it below |F|^2 = 1e-20, a cutoff in its own
             # units that at SoftPack's pressures would act near convergence.
             steer = force_norm > 0 ? st.mixing * speed / force_norm : 0.0
+            spin_steer = torque_norm > 0 ? st.mixing * spin_speed / torque_norm : 0.0
             @inbounds for i in eachindex(velocities)
-                velocities[i] = keep * velocities[i] + steer * forces[i]
+                velocities[i] = keep * velocities[i] + steer * total_force[i]
+                spins[i] = keep * spins[i] + spin_steer * total_torque[i]
             end
         end
         @inbounds for i in eachindex(positions)               # drift
             positions[i] += dt * velocities[i]
+            s.rotations[i] += dt * spins[i]
         end
         evaluate_forces!(s)
-        is_converged(test, s, force_floor) && return (:converged, step)
+        record_step!(control, s)
+        converged_now(test, s, ctx, contact_pressure(s.table, s.side, D), control.step,
+                      control.params) && return (:converged, step)
     end
     return (:steps_max, step)
 end

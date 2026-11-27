@@ -1,7 +1,7 @@
 # Creating a packing with `pack()`
 
 Design decision source: [design-references.md §0](https://github.com/ColtonKawamura/SoftPack/blob/main/docs/design-references.md#0-every-default-at-a-glance).
-Status: design stage. The engine implements the default frictionless path (see the README).
+Status: design stage. The engine implements every setting of the design (see the README).
 
 ## Summary
 

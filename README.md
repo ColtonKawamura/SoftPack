@@ -5,21 +5,9 @@ granular and soft-matter simulations. The goal is one well-documented, reproduci
 place to make packings, so that packings used across studies are built the same way
 and described by the same metadata.
 
-Planned features:
-
-- The main packing algorithms from the literature (FIRE compression to a target
-  pressure, damped molecular dynamics with pressure control, Lubachevsky–Stillinger,
-  Jodrey–Tory, random sequential addition, gravity deposition)
-- Hookean and Hertzian contacts, with Cundall–Strack and Hertz–Mindlin friction
-- Force-threshold convergence criteria and rattler removal
-- 2D and 3D periodic boxes, monodisperse, bidisperse and polydisperse particles
-- CPU, CUDA and Apple Metal backends
-- Plain CSV + TOML output readable from any language
-- Runs on laptops and HPC clusters
-
 ## Status
 
-Early development. The default frictionless path works end to end:
+The engine implements every setting of the design ([`docs/design-references.md`](docs/design-references.md)):
 
 ```julia
 using SoftPack
@@ -29,17 +17,26 @@ packing.packing_fraction  # 0.8387
 packing.contact_number    # 4.016, after removing 12 rattlers
 ```
 
-Implemented: 2D and 3D; `Bidisperse`, `UniformPolydisperse`, `Monodisperse` or an explicit
-`particles_diameters` list; `Hookean` contacts without friction; `EqualMass`; a
-`Pressure` target; a `Periodic` box; the `Dilute` start; `IsotropicCompression`; FIRE 2.0
-with the LAMMPS defaults and the semi-implicit Euler integrator; the `RelativeForce`
-convergence test; the `ContactCount` rattler rule (or `nothing`, or any function of the
-packing); `find_rattlers`; `failure_action`. The result stays in memory as a `Packing`.
+- Contacts: `Hookean` and `Hertzian`; `CundallStrack` and `Mindlin` friction with
+  particle rotation; `EqualMass` or `Density` masses.
+- Boundaries: periodic squares and cubes, or `Walls(friction = true/false)`.
+- Algorithms: FIRE 2.0 with the LAMMPS defaults, and `DampedDynamics` with the centered
+  velocity Verlet (default), lagged velocity Verlet or semi-implicit Euler, with
+  `ContactDamping`, `ViscousRate`, `RelativeVelocityDamping` and `StokesDrag`.
+- Particle sizes: `Bidisperse`, `UniformPolydisperse`, `Monodisperse`, or an explicit
+  `particles_diameters` list; 2D disks and 3D spheres.
+- Convergence: `RelativeForce`, `LeidenAcceleration`, `KineticEnergy`, `RestartTest`, or
+  any function of a read-only `RunState`.
+- Rattlers: `ContactCount`, `TwoContact`, `ForceFloor`, `Unresolved`, the friction-cone
+  test, or any function of the packing.
+- Restarts and output: `restart_packing`, `RestartFile`, `write_packing` (HDF5 or CSV,
+  gzip, a second rattler file, safe writes), `Snapshots`, and `Movie` (MP4 or GIF through
+  ffmpeg).
 
-Designed but not built yet (`pack()` refuses them by name): friction (`CundallStrack`,
-`Mindlin`), `Hertzian` contacts, `Density` masses, `Walls`, `DampedDynamics`, contact
-damping and drag, the other convergence tests and rattler rules, restarts, snapshots and
-movies, and `write_packing` (HDF5).
+Damped dynamics is correct but much slower to reach the tight force tolerance than FIRE:
+the contact dashpots die out slowest on the soft modes (design §8), so a frictional run
+with `DampedDynamics` usually needs `StokesDrag(during = :compression)` and a looser
+`RelativeForce` tolerance. This is the timing card T-2brz asks for.
 
 Choices still open on the design board are coded provisionally and marked in the source;
 `grep -rn PROVISIONAL src` lists them with their card.
