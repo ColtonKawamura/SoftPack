@@ -410,8 +410,6 @@ end
 
 # --- Recording (§6, §11) ----------------------------------------------------
 
-RestartFile(path::AbstractString; every) = RestartFile(path, every)
-
 """
     Interval
 
@@ -442,7 +440,6 @@ Base.@kwdef struct Movie
     size::Int = 640
     fps::Int = 25
 end
-
 Movie(path::AbstractString; every, size::Int = 640, fps::Int = 25) =
     Movie(path, every, size, fps)
 
@@ -456,6 +453,7 @@ Base.@kwdef struct RestartFile
     path::String
     every::Interval
 end
+RestartFile(path::AbstractString; every) = RestartFile(path, every)
 
 # --- All settings ------------------------------------------------------------
 
