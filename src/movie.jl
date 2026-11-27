@@ -9,7 +9,7 @@ const LARGE_COLOR = (UInt8(235), UInt8(145), UInt8(60))
 const MARKER_COLOR = (UInt8(30), UInt8(30), UInt8(30))
 
 """
-    render_frame!(path, system, size; markers = nothing)
+    render_frame!(path, system, size; markers = nothing, margin = 0.0)
 
 Draw the current state as a `size` by `size` PPM image: disks (2D) or spheres seen from
 above (3D, with the far particles drawn first, smaller and fainter), coloured by diameter,
@@ -22,23 +22,29 @@ shorter than a sixth of the diameter the frame draws a small dot instead, becaus
 line would vanish. `markers = true` or `false` forces the lines on or off; the default
 `nothing` draws them exactly when `system.friction !== nothing`.
 
+`margin` widens the frame beyond the box by that many length units on every side, which
+is how a rotated view of a periodic packing is drawn without cutting its corners off.
+With a margin the periodic copies are not drawn, because the frame no longer ends at the
+box edge.
+
 The geometry comes from the rotation itself: in 2D the angle of the line is the rotation
 angle, and in 3D the line is the body-fixed diameter along `x`, rotated by the rotation
 vector with Rodrigues' formula and then projected on the image plane.
 """
 function render_frame!(path::AbstractString, s::System{D}, size::Int;
-                       markers::Union{Bool,Nothing} = nothing) where {D}
+                       markers::Union{Bool,Nothing} = nothing,
+                       margin::Float64 = 0.0) where {D}
     draw_markers = markers === nothing ? s.friction !== nothing : markers
     image = fill(UInt8(255), 3, size, size)
-    scale = size / s.side
+    scale = size / (s.side + 2 * margin)
     order = collect(eachindex(s.positions))
     if D == 3
         sort!(order; by = i -> s.positions[i][3])
     end
     diameter_max = maximum(s.diameters)
     for i in order
-        x = s.positions[i][1] * scale
-        y = s.positions[i][2] * scale
+        x = (s.positions[i][1] + margin) * scale
+        y = (s.positions[i][2] + margin) * scale
         radius = 0.5 * s.diameters[i] * scale
         depth = D == 3 ? 0.7 + 0.3 * (s.positions[i][3] / s.side) : 1.0
         radius *= depth
@@ -48,10 +54,11 @@ function render_frame!(path::AbstractString, s::System{D}, size::Int;
         triple = (UInt8(round(Int, fog * color[1] + (1 - fog) * 252)),
                   UInt8(round(Int, fog * color[2] + (1 - fog) * 252)),
                   UInt8(round(Int, fog * color[3] + (1 - fog) * 252)))
-        # a periodic box wraps particles that cross the frame, so draw the copies too
+        # a periodic box wraps particles that cross the frame, so draw the copies too;
+        # with a margin the frame is wider than the box, so the copies would be dishonest
         xs = Float64[x]
         ys = Float64[y]
-        if s.boundary isa Periodic
+        if margin == 0 && s.boundary isa Periodic
             x - radius < 1 && push!(xs, x + size)
             x + radius > size && push!(xs, x - size)
             y - radius < 1 && push!(ys, y + size)
@@ -76,7 +83,9 @@ function render_frame!(path::AbstractString, s::System{D}, size::Int;
     end
     if s.boundary isa Walls
         border = (UInt8(60), UInt8(60), UInt8(60))
-        draw_rectangle!(image, 1, 1, size, size, border)
+        low = round(Int, margin * scale) + 1
+        high = round(Int, (margin + s.side) * scale)
+        draw_rectangle!(image, low, low, high, high, border)
     end
     open(path, "w") do io
         write(io, "P6\n", string(size), " ", string(size), "\n255\n")
@@ -205,7 +214,8 @@ Draw a finished packing to a PPM image `path`. The marker rule is the one of
 [`render_frame!`](@ref).
 """
 function render_packing(path::AbstractString, p::Packing; size::Int = 640,
-                        markers::Union{Bool,Nothing} = nothing)
-    render_frame!(path, p.system, size; markers = markers)
+                        markers::Union{Bool,Nothing} = nothing,
+                        margin::Float64 = 0.0)
+    render_frame!(path, p.system, size; markers = markers, margin = margin)
     return nothing
 end

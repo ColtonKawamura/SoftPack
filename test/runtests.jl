@@ -563,6 +563,18 @@ end
     @test abs(d[1]) < 1e-12 && d[2] ≈ 1.0 && d[3] ≈ 1.0
     q.system.rotations[1] = SVector(0.0, pi / 2, 0.0)   # x diameter points at the camera
     @test SoftPack.marker_direction(q.system, 1)[3] < 0.1
+    # a margin widens the frame (for a rotated view) and turns the wrap off
+    mktempdir() do directory
+        tight = joinpath(directory, "tight.ppm")
+        wide = joinpath(directory, "wide.ppm")
+        SoftPack.render_packing(tight, p; size = 80)
+        SoftPack.render_packing(wide, p; size = 80, margin = 0.5)
+        @test read(tight) != read(wide)
+        walled = pack(particles_count = 32, boundary = Walls())
+        SoftPack.render_packing(joinpath(directory, "walled.ppm"), walled; size = 80,
+                                margin = 0.3)   # the border follows the box, not the frame
+        @test isfile(joinpath(directory, "walled.ppm"))
+    end
 end
 
 @testset "failure handling (§6)" begin

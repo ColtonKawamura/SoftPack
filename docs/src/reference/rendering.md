@@ -17,6 +17,9 @@ than pixels, so it can be redrawn later at any size.
   side, so the packing looks continuous at the edges. A `Walls` system gets a frame
   instead.
 - No axes, no labels, no scale bar: the frame is the box, and its width is the box side.
+  `margin` widens the frame beyond the box on every side, which is how a rotated view of
+  a periodic packing is drawn without cutting its corners off; with a margin the wrapped
+  copies are not drawn, because the frame no longer ends at the box edge.
 
 ## The rotation marker
 
