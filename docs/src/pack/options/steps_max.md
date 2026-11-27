@@ -2,13 +2,27 @@
 
 *Up:* [Available options](index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [steps_max](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#steps_max); [Step cap (steps_max)](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#step-cap-steps_max).
+The cap on the number of integration steps in one call. A run that reaches it stops with
+`stop_reason = :steps_max` and `converged = false`, and the packing it has reached is
+returned; `failure_action` decides whether that is a warning or an error.
+
+The cap exists so a run that cannot converge ends instead of running forever. It is not a
+target: a run that converges uses whatever it needs, and the default $10^7$ is high enough
+that a normal run never reaches it. The default packing needs 87,000 steps.
+
+If a run does reach the cap, the useful next steps are to look at the pressure and the
+residual in the result, loosen the tolerance, or continue from a restart file with a higher
+cap.
 
 **Default:** `10^7`
 
-## Choices
+## Options
 
-| Choice | Default |
+| Value | Meaning |
 |:---|:---|
-| `10^7` | **default** |
+| any integer | the maximum number of steps |
+
+## Archival reference
+
+- [steps_max](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#steps_max)
+- [Step cap (steps_max)](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#step-cap-steps_max)

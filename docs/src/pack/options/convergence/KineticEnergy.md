@@ -2,11 +2,24 @@
 
 *Up:* [`convergence`](index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [KineticEnergy(tolerance = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#kineticenergytolerance--); [KineticEnergy](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#kineticenergy).
+A test for dynamics rather than minimization (design §5): the packing must be at rest,
 
-It holds when the `RelativeForce()` test (default tolerance) holds and the mean kinetic energy per particle is below `tolerance` times $P_\text{target}\,d^{D}$.
+$$\frac{1}{N}\sum_i \tfrac{1}{2} m_i |v_i|^2 < \varepsilon \, P_\text{target} \, d_\text{ref}^D,$$
+
+and the ordinary `RelativeForce` test must hold at its default tolerance. The right-hand
+side is the energy scale of the target pressure, so a run at a lower pressure is asked for
+a correspondingly lower kinetic energy.
+
+It exists for damped dynamics, where the velocities are physical and a packing can be
+mechanically balanced while one particle still drifts. FIRE manages its velocities itself,
+so with FIRE the plain force test is the natural one.
 
 ## Options
 
-- `tolerance`
+| Option | Default | Meaning |
+|:---|:---|:---|
+| `tolerance` | `1e-8` | $\varepsilon$, relative to the pressure energy scale |
+
+## Archival reference
+
+- [KineticEnergy(tolerance = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#kineticenergytolerance--)

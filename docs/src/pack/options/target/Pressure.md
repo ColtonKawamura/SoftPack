@@ -2,11 +2,41 @@
 
 *Up:* [`target`](index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [Target pressure](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#target-pressure); [Stress and pressure](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#stress-and-pressure).
+Run the compression until the measured pressure reaches `pressure` (design §2). The
+pressure of a configuration is
 
-This is the default for `target`.
+$$P = \frac{1}{D V}\left(\sum_\text{pairs} f_n \, l + \sum_\text{walls} f_n \, h\right),$$
+
+with $l$ the branch vector of a pair contact, $h$ the distance from a particle's center to
+the wall it touches, $V = L^D$ the box volume and $D$ the dimension. The sum runs in index
+order, so the same configuration always gives the same pressure to the last bit.
+
+The run accepts a compression step when $|P - P_\text{target}| \le$ `pressure_tolerance`
+times $P_\text{target}$; the default tolerance is $10^{-4}$, so the pressure lands within
+one part in ten thousand.
+
+Because a soft packing is compressed, the packing fraction depends on the pressure you ask
+for. In 2D at $N = 256$ (mean of three seeds):
+
+| $P$ | $\phi$ | $z - z_\text{iso}$ |
+|:---|---:|---:|
+| $10^{-2}$ | 0.8626 | 0.525 |
+| $10^{-3}$ | 0.8424 | 0.144 |
+| $10^{-4}$ | 0.8383 | 0.030 |
+| $10^{-5}$ | 0.8381 | 0.000 |
+
+The default $P = 10^{-4}$ sits where the backbone is almost isostatic and the packing is
+still cheap to reach: the default run takes 0.7 s.
 
 ## Options
 
-- `pressure`
+| Option | Default | Meaning |
+|:---|:---|:---|
+| `pressure` | `1e-4` | the target pressure, in reduced units |
+
+Both `Pressure()` and `Pressure(1e-3)` work.
+
+## Archival reference
+
+- [Target pressure](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#target-pressure)
+- [Stress and pressure](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#stress-and-pressure)

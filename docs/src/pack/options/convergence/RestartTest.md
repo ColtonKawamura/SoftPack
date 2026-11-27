@@ -2,7 +2,17 @@
 
 *Up:* [`convergence`](index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [RestartTest()](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#restarttest); [RestartTest](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#restarttest-1).
+The check for saddles (design §5). It first requires the `RelativeForce` test at its
+default tolerance, then zeroes the velocities on the final packing, relaxes once more, and
+asks whether the kinetic energy and the unbalanced forces stay down. A packing that passes
+the force test but drifts as soon as it is nudged was sitting on a saddle or on a
+marginal contact, and the restart test catches it.
 
-The `RelativeForce()` test (default tolerance) ends every minimization. Once, on the final packing, all velocities are set to zero and the packing is accepted only if neither the kinetic energy nor the unbalanced forces grow back.
+It has no options: the force tolerance is the `RelativeForce` default, $10^{-8}$.
+
+This is the most expensive test of the five, because it runs a second short minimization
+for every acceptance.
+
+## Archival reference
+
+- [RestartTest](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#restarttest)

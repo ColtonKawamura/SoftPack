@@ -10,7 +10,7 @@ Every option has a default, so the shortest call is the path and the packing.
 
 ```julia
 write_packing(                  # write one Packing to disk
-    "my_packing.h5",            # output path; the extension picks the format, .h5 is HDF5
+    "my_packing.h5",            # output path; `format` picks the layout (HDF5 by default)
     my_packing;                 # the Packing returned by pack(); the ; starts the keyword arguments
     rattlers_file = false,      # write only the remaining particles (default)
     compression   = nothing,    # leave the datasets uncompressed (default)
@@ -20,7 +20,7 @@ write_packing(                  # write one Packing to disk
 
 - `write_packing(...)` — writes one `Packing` to disk, as a call separate from `pack()`.
   - For details, see [the Packing page](../pack/Packing.md).
-- `"my_packing.h5"` — the output path, whose extension picks the format.
+- `"my_packing.h5"` — the output path. `format` picks the layout, HDF5 by default.
   - HDF5 is the default format, read natively by Julia, Python and MATLAB.
   - For details, see [path and file format](path.md).
 - `my_packing` — the `Packing` to write.

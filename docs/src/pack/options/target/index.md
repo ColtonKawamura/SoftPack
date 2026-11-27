@@ -2,10 +2,13 @@
 
 *Up:* [Available options](../index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [pack(target = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#packtarget--); [Target pressure](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#target-pressure).
+The target is what the compression runs to. SoftPack stops when the pressure measured from
+the contacts is inside a band around the target and the convergence test holds, so the
+target is the pressure at which the packing is defined, not a packing fraction: the
+packing fraction that comes out is the answer, not the input.
 
-What to compress to.
+The pressure is the elastic virial of the contact forces divided by the volume; it counts
+the pair contacts and, for a `Walls` box, the wall contacts.
 
 **Default:** `Pressure(1e-4)`
 
@@ -14,3 +17,8 @@ What to compress to.
 | Choice | Default |
 |:---|:---|
 | [`Pressure()`](Pressure.md) | **default** |
+
+## Archival reference
+
+- [pack(target = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#packtarget--)
+- [Target pressure](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#target-pressure)

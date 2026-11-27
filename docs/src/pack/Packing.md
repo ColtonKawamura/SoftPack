@@ -2,7 +2,61 @@
 
 *Up:* [`pack()`](index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [The returned packing and the file](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#the-returned-packing-and-the-file); [What a file holds](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#what-a-file-holds); [Run outcomes](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#run-outcomes).
+`pack()` returns a `Packing`: the result of one run, in memory. It holds the analysis
+data, the scalar results, the full dynamic state and the provenance of the run, and it is
+what `write_packing`, `find_rattlers` and a restart read.
 
-What pack() returns: fields, converged, what to do with it.
+## Per particle
+
+Each field has one entry per particle, in particle order, and the index is the particle id.
+
+| Field | Type | Meaning |
+|:---|:---|:---|
+| `positions` | $D \times N$ matrix | centers, inside the box |
+| `diameters` | vector | the diameter of each particle |
+| `masses` | vector | the mass of each particle |
+| `forces` | $D \times N$ matrix | net elastic force |
+| `torques` | $N_R \times N$ matrix | net elastic torque |
+| `rattlers` | `BitVector` | `true` for a particle the rule removed |
+
+## Contacts and results
+
+| Field | Meaning |
+|:---|:---|
+| `contacts` | the final `ContactTable`: pairs, walls, overlaps, forces, sliding flags |
+| `box_side` | the side of the box at the end of the run |
+| `pressure` | the elastic virial pressure |
+| `packing_fraction` | $\sum_i \pi d_i^D / (2^D V)$, all particles |
+| `contact_number` | $z$ after the rattler removal |
+| `force_residual` | $\max_i \lVert F_i \rVert / \langle f_n \rangle$ |
+
+## Run and provenance
+
+`converged`, `stop_reason` (`:converged`, `:steps_max`, `:uphill_max`, `:strain_step_min`),
+`steps`, `compression_steps_accepted`, `compression_steps_rejected`, `strain_step_final`,
+`timestep_start`, `runtime_seconds`, `diameter_reference`, `diameter_mean`,
+`mass_reference`, `settings`, `seed`, `random_number_generator`, `softpack_version`,
+`softpack_commit`, `julia_version`.
+
+## The state
+
+`system` and `control` hold everything the run would need to continue: velocities,
+rotations and spins, accelerations, the contact history, the compression state and the FIRE
+counters. They are not meant to be read by hand; `write_packing` and `restart_packing` use
+them.
+
+## Accessors
+
+| Function | Returns |
+|:---|:---|
+| `contact_pressure(p)` | the measured pressure |
+| `mean_normal_force(p)` | the mean normal force over the contacts |
+| `is_converged(p)` | whether the run met its test |
+| `run_state(p)` | a `RunState` of the final state, for a user test or rule |
+| `find_rattlers(p, rule)` | a `BitVector`, what another rule would say |
+
+## Archival reference
+
+- [The returned packing and the file](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#the-returned-packing-and-the-file)
+- [What a file holds](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#what-a-file-holds)
+- [Run outcomes](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#run-outcomes)

@@ -2,11 +2,32 @@
 
 *Up:* [`boundary`](index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [Walls](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#walls); [Pressure with walls](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#pressure-with-walls).
+Rigid walls on every side of the box (design §2). A particle that reaches a wall is
+pushed back by the same contact law, with the wall as an infinite-mass partner; the
+contact's branch vector is the distance from the particle's center to the wall, and its
+lever arm is the particle radius.
 
-Rigid flat walls; wall contacts use the contact law and, with friction set, its friction model.
+`Walls(friction = true)` is the default for the type: wall contacts then carry a
+tangential spring and a Coulomb cap like particle contacts, using the same friction model.
+`Walls(friction = false)` keeps the normal force only, which is the cleaner choice when
+wall friction would confuse a measurement of the bulk.
+
+The pressure includes the wall virial,
+
+$$P = \frac{1}{D V}\left(\sum_\text{pairs} f_n \, l + \sum_\text{walls} f_n \, h\right),$$
+
+and the walls move with the box during compression, so the container shrinks with the
+packing.
+
+Counting a wall contact like a pair contact in the coordination number is provisional:
+the design leaves that open for `Walls`.
 
 ## Options
 
-- `friction`
+| Option | Default | Meaning |
+|:---|:---|:---|
+| `friction` | `true` | whether wall contacts carry the tangential model |
+
+## Archival reference
+
+- [pack(boundary = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#packboundary--)

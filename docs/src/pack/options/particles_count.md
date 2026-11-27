@@ -2,14 +2,37 @@
 
 *Up:* [Available options](index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [256 particles](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#256-particles); [Other particle counts, algorithm and friction](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#other-particle-counts-algorithm-and-friction).
+How many particles the packing has. More particles mean smaller finite-size scatter and a
+packing fraction closer to the thermodynamic limit, at a cost that grows faster than
+linearly: the default 2D run takes 0.7 s at 256 particles, 6.5 s at 1024 and 128 s at
+4096.
+
+The default is 256, which is large enough for the packing fraction to be stable to about
+$10^{-3}$ and small enough to run in under a second.
 
 **Default:** `256`
 
-## Choices
+## Options
 
-| Choice | Default |
+| Value | Meaning |
 |:---|:---|
-| `256` | **default** |
-| `any N ≥ 2` |  |
+| any integer $N \ge 2$ | the number of particles |
+
+With `particles_diameters` the count is taken from the list; the two cannot disagree.
+
+## Finite-size effect
+
+Default settings, seed 1, 2D:
+
+| $N$ | $\phi$ | $z$ |
+|:---|---:|---:|
+| 256 | 0.8387 | 4.016 |
+| 1024 | 0.8409 | 4.037 |
+| 4096 | 0.8410 | 4.047 |
+
+The packing fraction rises with $N$ because the small systems keep a larger fraction of
+their particles at the surface of the fluctuation; at 1024 it has converged.
+
+## Archival reference
+
+- [pack(particles_count = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#packparticles_count--)

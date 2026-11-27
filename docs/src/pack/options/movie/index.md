@@ -2,8 +2,11 @@
 
 *Up:* [Available options](../index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [pack(movie = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#packmovie--); [Snapshots and movie](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#snapshots-and-movie).
+Render a movie of the run: a frame every `every` steps, drawn straight from the positions,
+encoded with ffmpeg at the end. A movie shows how the packing gets there, which a snapshot
+cannot; the price is one image per frame and an ffmpeg run at the end.
+
+Nothing is recorded by default.
 
 **Default:** `nothing`
 
@@ -11,5 +14,10 @@
 
 | Choice | Default |
 |:---|:---|
-| [`Movie()`](Movie.md) |  |
 | `nothing` | **default** |
+| [`Movie()`](Movie.md) |  |
+
+## Archival reference
+
+- [pack(movie = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#packmovie--)
+- [Snapshots and movie](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#snapshots-and-movie)

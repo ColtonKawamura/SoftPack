@@ -1,15 +1,22 @@
 # `drag`
 
-*Up:* [`DampedDynamics()`](../index.md)
+*Up:* [`DampedDynamics`](../index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [DampedDynamics(drag = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Damping#dampeddynamicsdrag--); [No Stokes drag](https://github.com/ColtonKawamura/SoftPack/wiki/Damping#no-stokes-drag).
+Stokes drag is a body force on every particle, proportional to its velocity, as if the
+packing sat in a viscous fluid (design §8). It is separate from the contact dashpots: the
+dashpots act only where two particles touch, while drag acts on every particle, including
+one that touches nothing.
 
-Stokes drag; FIRE() and DampedDynamics() both take this keyword.
+Drag is the tool that fixes the long tail of damped dynamics: a free particle that the
+contact dashpots cannot slow down is brought to rest by the drag.
 
 ## Choices
 
 | Choice | Default |
 |:---|:---|
-| [`StokesDrag()`](StokesDrag.md) |  |
 | `nothing` | **default** |
+| [`StokesDrag()`](StokesDrag.md) |  |
+
+## Archival reference
+
+- [Stokes drag](https://github.com/ColtonKawamura/SoftPack/wiki/Damping#stokes-drag)

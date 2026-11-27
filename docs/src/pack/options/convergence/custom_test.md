@@ -2,7 +2,24 @@
 
 *Up:* [`convergence`](index.md)
 
-!!! warning "Not written in the new format yet"
-    This page is a placeholder in the new structure. The current text lives in the wiki: [Any function](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#any-function).
+`convergence` also accepts a function. It is called with a `RunState` after each step and
+must return `true` when the packing counts as converged:
 
-Any function `my_test(state)` that returns true when the packing is at rest at the current box. It receives a read-only `RunState` ([fields](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#the-state-a-user-function-receives)) and is called at the end of every step. A `true` ends the current minimization, not the run, and the pressure check still follows.
+```
+pack(convergence = state -> state.step >= 10_000)
+```
+
+The `RunState` carries the live arrays of the run: `positions`, `velocities`, `rotations`,
+`spins`, `diameters`, `masses`, `moments`, `forces`, `torques`, the contact arrays
+(`first`, `second`, `overlaps`, `normal_forces`, `tangential_forces`), `box_side`,
+`boundary`, `pressure`, `step` and `settings`. The arrays are the system's own, so a
+function can read them freely; writing to them is possible but unsupported (PROVISIONAL
+T-1x2y: the design says the test is a function of the contact network and leaves the
+argument open, so the arrays are handed over directly).
+
+The pressure band is still applied on top of your test: a compression step is accepted
+only when your function returns `true` and the pressure is inside the band.
+
+## Archival reference
+
+- [Convergence criterion](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion)
