@@ -297,7 +297,12 @@ function write_state(path::AbstractString, s::System{D,NR}, control::RunControl{
                   isempty(table.tangential_forces) ? zeros(D, 0) :
                   positions_matrix(table.tangential_forces), level)
             if size(s.wall_tangential, 1) > 0
-                _put!(f, "state/walls/tangential", permutedims(s.wall_tangential, (3, 1, 2)), level)
+                walls, count = size(s.wall_tangential)
+                tangential = Array{Float64}(undef, D, walls, count)
+                for w in 1:walls, i in 1:count, a in 1:D
+                    tangential[a, w, i] = s.wall_tangential[w, i][a]
+                end
+                _put!(f, "state/walls/tangential", tangential, level)
                 _put!(f, "state/walls/sliding", collect(UInt8.(s.wall_sliding)), level)
             end
             compression = control.compression
@@ -387,16 +392,17 @@ function read_state(path::AbstractString)
             system.neighbors.sliding[p] = sliding[k]
         end
         if size(system.wall_tangential, 1) > 0
-            wall = permutedims(read(f["state/walls/tangential"]), (2, 3, 1))
+            wall = read(f["state/walls/tangential"])
             for w in axes(system.wall_tangential, 1), i in axes(system.wall_tangential, 2)
                 system.wall_tangential[w, i] =
-                    SVector{D,Float64}(ntuple(a -> wall[w, i, a], Val(D)))
+                    SVector{D,Float64}(ntuple(a -> wall[a, w, i], Val(D)))
             end
             system.wall_sliding .= Bool.(read(f["state/walls/sliding"]))
         end
         copyto!(system.last_positions, system.positions)
         copyto!(system.last_rotations, system.rotations)
-        control = RunControl(positions, side, params; step = Int(attrs["step"]))
+        control = RunControl(positions, side, params; step = Int(attrs["step"]),
+                             timestep = attrs["time_step"])
         control.compression.accepted_side = attrs["compression_accepted_side"]
         control.compression.strain = attrs["compression_strain"]
         control.compression.accepted = Int(attrs["compression_accepted"])

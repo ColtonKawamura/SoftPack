@@ -109,7 +109,7 @@ Every particle has the same mass (design §4).
 struct EqualMass <: MassRule
     mass::Float64
 end
-EqualMass() = EqualMass(1.0)
+EqualMass(; mass::Float64 = 1.0) = EqualMass(mass)
 
 """
     Density(density = 1.0)
@@ -120,7 +120,7 @@ Mass from a material density times the particle's area (a disk, 2D) or volume (a
 struct Density <: MassRule
     density::Float64
 end
-Density() = Density(1.0)
+Density(; density::Float64 = 1.0) = Density(density)
 
 # --- Target, box, start and protocol (§2) -----------------------------------
 

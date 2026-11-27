@@ -83,6 +83,7 @@ mutable struct RunControl{D}
     step::Int
     step_at_start::Int
     steps_max::Int
+    time_step::Float64
     restart_schedule::Union{Nothing,Schedule}
     snapshot_schedule::Union{Nothing,Schedule}
     movie_schedule::Union{Nothing,Schedule}
@@ -97,7 +98,8 @@ mutable struct RunControl{D}
 end
 
 function RunControl(positions::Vector{SVector{D,Float64}}, side::Float64,
-                    params::PackParams; step::Int = 0) where {D}
+                    params::PackParams; step::Int = 0,
+                    timestep::Float64 = 0.0) where {D}
     started = time()
     strain = params.protocol isa IsotropicCompression ? params.protocol.strain_step : 0.0
     restart_schedule = params.restart_file isa RestartFile ?
@@ -110,7 +112,7 @@ function RunControl(positions::Vector{SVector{D,Float64}}, side::Float64,
     movie_size = params.movie isa Movie ? params.movie.size : 640
     movie_fps = params.movie isa Movie ? params.movie.fps : 25
     return RunControl{D}(params, CompressionState(positions, side, strain), step, step,
-        params.steps_max, restart_schedule, snapshot_schedule, movie_schedule,
+        params.steps_max, timestep, restart_schedule, snapshot_schedule, movie_schedule,
         Matrix{Float64}[], movie_directory, 0, movie_size, movie_fps, movie_path, true,
         String[])
 end
@@ -123,7 +125,14 @@ when its schedule is due (design §6, §11). Recording never changes the traject
 """
 function record_step!(control::RunControl{D}, s::System{D}) where {D}
     if control.restart_schedule !== nothing && due!(control.restart_schedule, control.step)
-        write_state(control.params.restart_file.path, s, control; converged = false)
+        pressure = contact_pressure(s.table, s.side, D)
+        fraction = total_volume(s.diameters, D) / s.side^D
+        results = RunResults(pressure, fraction, NaN, NaN, false, :running,
+                             diameter_reference(control.params.particles_size_distribution),
+                             sum_in_order(d -> d, s.diameters) / length(s.diameters),
+                             mass_reference(control.params.mass, s.masses),
+                             control.time_step)
+        write_state(control.params.restart_file.path, s, control, results)
         advance!(control.restart_schedule, control.step)
     end
     if control.snapshot_schedule !== nothing && due!(control.snapshot_schedule, control.step)

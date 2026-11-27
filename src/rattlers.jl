@@ -114,57 +114,6 @@ convergence_tolerance(settings) =
     hasproperty(settings.convergence, :tolerance) ? settings.convergence.tolerance : 1e-8
 
 """
-    remove_by_count!(rattler, neighbors, minimum) -> Bool
-
-Queue every particle below the minimum contact count, then cascade: removing a particle
-decrements its neighbors' counts.
-"""
-function remove_by_count!(rattler::BitVector, neighbors, minimum::Int)
-    count = length(rattler)
-    contacts = [length(neighbors[i]) for i in 1:count]
-    queue = Int[]
-    for i in 1:count
-        if !rattler[i] && contacts[i] < minimum
-            rattler[i] = true
-            push!(queue, i)
-        end
-    end
-    while !isempty(queue)
-        i = pop!(queue)
-        for j in neighbors[i]
-            rattler[j] && continue
-            contacts[j] -= 1
-            if contacts[j] < minimum
-                rattler[j] = true
-                push!(queue, j)
-            end
-        end
-    end
-    return !isempty(queue) || any(rattler)
-end
-
-"""
-    remove_by_cone!(rattler, neighbors, normals, mu) -> Bool
-
-Remove every remaining two-contact particle whose two contact directions are closer than
-`pi - 2 arctan(mu)` (design §9, "cone test"): the friction cones cannot hold it.
-"""
-function remove_by_cone!(rattler::BitVector, neighbors, normals, mu::Float64)
-    limit = pi - 2 * atan(mu)
-    changed = false
-    for i in eachindex(rattler)
-        rattler[i] && continue
-        length(neighbors[i]) == 2 || continue
-        cosine = clamp(dot_in_order(normals[i][1], normals[i][2]), -1.0, 1.0)
-        if acos(cosine) < limit
-            rattler[i] = true
-            changed = true
-        end
-    end
-    return changed
-end
-
-"""
     contact_number(table, rattlers) -> Float64
 
 Mean number of contacts per remaining particle, counting only contacts between two

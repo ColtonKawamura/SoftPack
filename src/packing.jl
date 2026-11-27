@@ -76,6 +76,34 @@ results(p::Packing) = RunResults(p.pressure, p.packing_fraction, p.contact_numbe
     p.force_residual, p.converged, p.stop_reason, p.diameter_reference, p.diameter_mean,
     p.mass_reference, p.timestep_start)
 
+"""
+    contact_pressure(packing) -> Float64
+
+The pressure measured at the end of the run: the virial of the final contact table.
+"""
+contact_pressure(p::Packing{D}) where {D} = contact_pressure(p.contacts, p.box_side, D)
+
+"""
+    mean_normal_force(packing) -> Float64
+
+The mean normal force over the contacts of the final state.
+"""
+mean_normal_force(p::Packing) = mean_normal_force(p.contacts)
+
+"""
+    is_converged(packing) -> Bool
+
+Whether the run met its convergence test; the same value as `packing.converged`.
+"""
+is_converged(p::Packing) = p.converged
+
+"""
+    run_state(packing) -> RunState
+
+A `RunState` of the final state, the view a user convergence or rattler function gets.
+"""
+run_state(p::Packing) = run_state(p.system, p.pressure, p.steps, p.settings)
+
 function Base.show(io::IO, p::Packing{D}) where {D}
     print(io, "Packing{$D}(", length(p.diameters), " particles, P = ",
           @sprintf("%.4g", p.pressure), ", converged = ", p.converged, ")")

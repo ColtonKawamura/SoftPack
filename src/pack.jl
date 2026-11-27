@@ -50,10 +50,10 @@ function restart_pack(kwargs)
     stored, system, previous_control, previous, provenance = read_state(path)
     params = merge_restart_settings(stored, kwargs)
     validate(params)
-    control = RunControl(copy(system.positions), system.side, params;
-                         step = previous_control.step)
-    control.compression = previous_control.compression
     timestep = previous.time_step
+    control = RunControl(copy(system.positions), system.side, params;
+                         step = previous_control.step, timestep = timestep)
+    control.compression = previous_control.compression
     evaluate_forces!(system)
     pressure = contact_pressure(system.table, system.side, params.dimension)
     band = params.pressure_tolerance * params.target.value
@@ -118,7 +118,7 @@ function pack(p::PackParams)
                               diameter_ref = diameter_ref,
                               packing_fraction = dimension == 2 ? 0.84 : 0.64)
     system = System(positions, diameters, masses, side, p.contact, p.friction, p.boundary)
-    control = RunControl(positions, side, p; step = 0)
+    control = RunControl(positions, side, p; step = 0, timestep = timestep)
     ctx = convergence_context(p, system, timestep)
     outcome = compress!(system, p, control, timestep, ctx)
     return finish_packing(system, p, control, outcome, timestep, started;

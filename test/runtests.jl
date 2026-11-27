@@ -502,6 +502,20 @@ end
         write_packing(csv, p; format = :csv)
         @test isfile(joinpath(directory, "packing_particles.csv"))
         @test isfile(joinpath(directory, "packing_contacts.csv"))
+        # a periodic restart file written during the run, and a continuation from it
+        for boundary in (Periodic(), Walls())
+            path = joinpath(directory, "midrun-$(nameof(typeof(boundary))).h5")
+            first_run = pack(particles_count = 32, boundary = boundary, steps_max = 20_000,
+                             restart_file = RestartFile(path; every = 2000))
+            @test isfile(path)
+            continued = pack(restart_packing = path)
+            @test continued.converged || continued.stop_reason === :steps_max
+            @test continued.positions isa Matrix{Float64}
+        end
+        # the rattlers file and gzip compression
+        marked = joinpath(directory, "marked.h5")
+        write_packing(marked, p; rattlers_file = true, compression = (:gzip, 4))
+        @test isfile(SoftPack.second_path(marked))
         snap = joinpath(directory, "snapshots.h5")
         p4 = pack(particles_count = 32, snapshots = Snapshots(every = 2000),
                   steps_max = 200_000)
@@ -517,6 +531,38 @@ end
             @test isfile(movie) && filesize(movie) > 1000
         end
     end
+end
+
+@testset "rotation markers" begin
+    p = pack(particles_count = 32)
+    mktempdir() do directory
+        plain = joinpath(directory, "plain.ppm")
+        SoftPack.render_packing(plain, p; size = 120)
+        auto = joinpath(directory, "auto.ppm")
+        SoftPack.render_packing(auto, p; size = 120)
+        @test read(plain) == read(auto)       # frictionless: the default draws no markers
+        marked = joinpath(directory, "marked.ppm")
+        SoftPack.render_packing(marked, p; size = 120, markers = true)
+        @test read(marked) != read(plain)
+        f = pack(particles_count = 32,
+                 friction = CundallStrack(friction_coefficient = 0.3))
+        on = joinpath(directory, "friction.ppm")
+        SoftPack.render_packing(on, f; size = 120)
+        off = joinpath(directory, "friction_off.ppm")
+        SoftPack.render_packing(off, f; size = 120, markers = false)
+        @test read(on) != read(off)           # friction: the default draws them
+    end
+    p.system.rotations[1] = SVector(0.0)
+    @test SoftPack.marker_direction(p.system, 1) == (1.0, 0.0, 1.0)
+    p.system.rotations[1] = SVector(pi / 2)
+    d = SoftPack.marker_direction(p.system, 1)
+    @test abs(d[1]) < 1e-12 && d[2] ≈ 1.0 && d[3] == 1.0
+    q = pack(dimension = 3, particles_count = 64)
+    q.system.rotations[1] = SVector(0.0, 0.0, pi / 2)   # turn about the view axis
+    d = SoftPack.marker_direction(q.system, 1)
+    @test abs(d[1]) < 1e-12 && d[2] ≈ 1.0 && d[3] ≈ 1.0
+    q.system.rotations[1] = SVector(0.0, pi / 2, 0.0)   # x diameter points at the camera
+    @test SoftPack.marker_direction(q.system, 1)[3] < 0.1
 end
 
 @testset "failure handling (§6)" begin

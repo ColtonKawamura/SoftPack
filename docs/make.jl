@@ -138,6 +138,8 @@ makedocs(;
             "Units and length unit" => "reference/units.md",
             "Theory pages" => "reference/theory.md",
             "Notation" => "reference/notation.md",
+            "Images and movies" => "reference/rendering.md",
+            "Tested combinations" => "reference/coverage.md",
             "References" => "reference/references.md",
         ],
         "Roadmap" => "roadmap.md",
