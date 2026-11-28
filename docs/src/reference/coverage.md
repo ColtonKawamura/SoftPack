@@ -34,3 +34,7 @@ julia --project=. benchmarks/coverage.jl
 
 The run takes about six minutes. `benchmarks/coverage.md` lists what each section varies
 and what the sweep found.
+
+Paper-level benchmarks against the O'Hern 2003 and Silbert 2010 figures are in
+[`benchmarks/paper_figures`](https://github.com/ColtonKawamura/SoftPack/tree/main/benchmarks/paper_figures):
+118 runs and three figures that reproduce the published jamming values and scaling.

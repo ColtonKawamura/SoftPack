@@ -14,12 +14,13 @@ shrunk; when the power is negative it is going uphill, so the step is cut and $\
 reset. FIRE therefore needs no tuning of its time step for a new packing, which is why it
 is the default.
 
-The 11 parameters are the ones of the standard scheme; their defaults are the LAMMPS
-values. You rarely need to touch them.
+The first ten parameters are the standard FIRE 2.0 scheme, with the LAMMPS values;
+`integrator`, `displacement_max`, `damping` and `drag` are SoftPack additions. You
+rarely need to touch them.
 
 | Option | Default | Meaning |
 |:---|:---|:---|
-| `timestep_max` | `10.0` | upper bound of the adaptive step |
+| `timestep_max` | `10.0` | upper bound of the adaptive step, in multiples of the starting step |
 | `timestep_min` | `0.02` | lower bound; a run that reaches it is stuck |
 | `delay` | `20` | steps of downhill before the step is allowed to grow |
 | `timestep_grow` | `1.1` | factor applied to the step on a downhill step |
@@ -27,7 +28,7 @@ values. You rarely need to touch them.
 | `mixing_coefficient` | `0.25` | the starting $\alpha$ |
 | `mixing_shrink` | `0.99` | factor applied to $\alpha$ on each downhill step |
 | `uphill_max` | `2000` | uphill steps tolerated before the run stops with `:uphill_max` |
-| `inertia_correction` | `true` | whether $\alpha$ follows the standard FIRE schedule |
+| `inertia_correction` | `true` | whether an uphill move steps back half a step (LAMMPS `halfstepback`) |
 | `delay_initial` | `true` | whether the first `delay` steps are taken before growth |
 | `integrator` | `:semi_implicit_euler` | the only integrator FIRE implements |
 | `displacement_max` | `0.1` | the largest displacement of one step, in reference diameters |

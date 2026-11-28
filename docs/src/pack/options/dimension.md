@@ -26,7 +26,7 @@ pack(dimension = 3, particles_count = 512)
 ```
 
 In 3D use more particles than in 2D for the same quality: the surface-to-volume ratio of
-the fluctuation is larger, and the default 3D run uses 512.
+the fluctuation is larger, and the README example uses 512.
 
 ## Archival reference
 

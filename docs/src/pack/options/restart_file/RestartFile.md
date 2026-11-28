@@ -12,7 +12,8 @@ Write the run state to `path` every `every` steps (design §6). `every` can also
 The write is atomic: the state goes to a temporary file in the same directory and is
 renamed over the path, so a job killed during a save leaves the previous file intact. A
 save costs one HDF5 write of the state arrays, which for the default run is a few
-milliseconds and is why the default schedule is every 10,000 steps rather than every step.
+milliseconds; a schedule is therefore given as a step interval rather than a save on every
+step.
 
 A restart file is the same format as the main file `write_packing` writes, so a packing
 saved at the end of a run can be continued too; the difference is only when the file is

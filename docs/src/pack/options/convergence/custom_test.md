@@ -10,8 +10,8 @@ pack(convergence = state -> state.step >= 10_000)
 ```
 
 The `RunState` carries the live arrays of the run: `positions`, `velocities`, `rotations`,
-`spins`, `diameters`, `masses`, `moments`, `forces`, `torques`, the contact arrays
-(`first`, `second`, `overlaps`, `normal_forces`, `tangential_forces`), `box_side`,
+`spins`, `diameters`, `masses`, `moments_of_inertia`, `forces`, `torques`, the contact arrays
+(`contact_first`, `contact_second`, `overlaps`, `normal_forces`, `tangential_forces`), `box_side`,
 `boundary`, `pressure`, `step` and `settings`. The arrays are the system's own, so a
 function can read them freely; writing to them is possible but unsupported (PROVISIONAL
 T-1x2y: the design says the test is a function of the contact network and leaves the

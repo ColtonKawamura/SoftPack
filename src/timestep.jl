@@ -49,7 +49,7 @@ end
 `t_col = pi sqrt(M / k)` over the two contact directions, with `M` the reduced mass of the
 lightest pair for the normal direction and the rotation-included sliding mass for the
 tangential one (card T-d66w, option 1; design §12). A number: that many time units
-`tau = sqrt(m_ref / stiffness)`.
+`tau = sqrt(m_min / stiffness)`.
 """
 function timestep_start(rule::CollisionTime, masses::Vector{Float64},
                         stiffness::Float64, mass_ref::Float64;

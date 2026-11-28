@@ -3,7 +3,7 @@
 SoftPack is a Julia package for generating jammed packings of soft particles for granular and soft-matter simulations.
 The goal is one well-documented, reproducible place to make packings, so that packings used across studies are built the same way and described by the same metadata.
 
-Status: design stage. The engine implements every setting of the design (see the README); the pages describe the interface.
+Status: the engine implements every setting of the design; pre-release. The pages describe the interface.
 
 ## Start here
 
@@ -17,8 +17,8 @@ SoftPack has two functions you call. Each page opens with every default written 
 - [Naming rules](reference/naming.md): how keywords and types are named.
 - [Units and length unit](reference/units.md): the units every page uses.
 - [Theory pages](reference/theory.md): models, derivations and worked numbers behind the defaults.
-- [Notation](reference/notation.md): every symbol, its meaning and units.
-- [References](reference/references.md): full citations for every source.
+- [Notation](reference/notation.md): the symbol list, still maintained on the wiki.
+- [References](reference/references.md): the full citation list, still maintained on the wiki.
 
 ## Roadmap
 
@@ -28,7 +28,7 @@ SoftPack has two functions you call. Each page opens with every default written 
 
 - **Notation** follows [Notation](reference/notation.md): $\gamma$ is a dashpot coefficient (force per velocity), rates are $r$ and $a$, and $c$ is never damping.
 - **Equations** are LaTeX: inline `$...$`, display `$$...$$`.
-- **Sources** are cited by key, for example [Somfai2005], with the full citation at the bottom of each page.
+- **Sources** are cited by key, for example [Somfai2005], with the full citation at the bottom of the pages that carry a reference list; the complete list is on the [wiki References page](https://github.com/ColtonKawamura/SoftPack/wiki/References).
 - **Quotes** are copied verbatim from the sources' full texts and keep the sources' own symbols.
 - **SoftPack choice** marks a decision with no literature source, and **SoftPack note** marks our own derivation, estimate or unit conversion.
 

@@ -17,7 +17,7 @@ every later change. The old packings are still readable as data; the way to comp
 with SoftPack results is an ensemble comparison (packing fraction, coordination, contact
 statistics), not a trajectory match, which the old code never made reproducible.
 
-**Status.** Recorded; no code. A migration note for JLD2 files is in the README.
+**Status.** Recorded; no code. The design document records why JLD2 is not offered (section 11).
 
 ## Archival reference
 

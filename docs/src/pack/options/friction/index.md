@@ -31,8 +31,8 @@ frictionless $2D$.
 
 ## Measured effect
 
-At $P = 10^{-4}$, $N = 256$, 2D, FIRE: $\phi = 0.8131$ at $\mu = 0.1$, $0.7997$ at
-$\mu = 0.3$ and $0.7856$ at $\mu = 0.5$, against $0.8387$ frictionless.
+At $P = 10^{-4}$, $N = 256$, 2D, FIRE: $\phi = 0.8160$ at $\mu = 0.1$, $0.7927$ at
+$\mu = 0.3$ and $0.7825$ at $\mu = 0.5$, against $0.8387$ frictionless.
 
 ## Archival reference
 

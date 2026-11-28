@@ -3,7 +3,7 @@
 *Up:* [Available options](../index.md)
 
 The algorithm moves the particles. SoftPack has two: FIRE, a minimization that adapts its
-own time step and zeroes the velocity on an uphill step, and damped dynamics, a physical
+own time step and steps back half a step on an uphill move, and damped dynamics, a physical
 relaxation with contact dashpots and optional Stokes drag.
 
 FIRE is the default because it reaches a tight force tolerance fastest on soft packings:

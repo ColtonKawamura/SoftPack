@@ -47,6 +47,8 @@ Run the tests with `julia --project -e 'using Pkg; Pkg.test()'`.
 
 - [Design decisions](docs/design-references.md): every setting of `pack()`, its
   default, and the sources behind it ([BibTeX](docs/references.bib)).
+- [Paper benchmarks](benchmarks/paper_figures/README.md): the O'Hern 2003 and
+  Silbert 2010 reproduction figures, with the run script and the raw data.
 - [Wiki](https://github.com/ColtonKawamura/SoftPack/wiki): one page per design
   section, with the symbols defined, the formulas derived and the numbers worked out.
 

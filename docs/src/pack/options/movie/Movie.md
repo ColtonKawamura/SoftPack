@@ -19,7 +19,7 @@ skipped with a warning in `packing.control.warnings`; if encoding fails, the fra
 directory is kept and its path is reported, so the frames are not lost.
 
 A movie adds little to the run time: a 720-pixel frame of 256 disks takes 1.3 ms, so a
-frame every 500 steps over 87,000 steps costs about a second. The frames are large (about
+frame every 500 steps over 87,000 steps costs about 0.2 s. The frames are large (about
 1.5 MB each as PPM) but they live in the temporary directory and only the encoded movie is
 kept.
 

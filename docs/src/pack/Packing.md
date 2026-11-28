@@ -9,6 +9,7 @@ what `write_packing`, `find_rattlers` and a restart read.
 ## Per particle
 
 Each field has one entry per particle, in particle order, and the index is the particle id.
+`N_R` in the table is the number of rotational degrees of freedom: 1 in 2D and 3 in 3D.
 
 | Field | Type | Meaning |
 |:---|:---|:---|

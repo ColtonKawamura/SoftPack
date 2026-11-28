@@ -1,7 +1,7 @@
 # Creating a packing with `pack()`
 
 Design decision source: [design-references.md §0](https://github.com/ColtonKawamura/SoftPack/blob/main/docs/design-references.md#0-every-default-at-a-glance).
-Status: design stage. The engine implements every setting of the design (see the README).
+Status: the engine implements every setting of the design; pre-release.
 
 ## Summary
 
@@ -146,21 +146,22 @@ from [Agnolin2007] ([§5](https://github.com/ColtonKawamura/SoftPack/wiki/Conver
 | `algorithm` | `FIRE()` | FIRE 2.0 minimization with the LAMMPS defaults (next table) | `DampedDynamics()`: $\mathbf M\ddot{\mathbf r} = \mathbf F(\mathbf r) - \boldsymbol\Gamma\dot{\mathbf r}$ | [Bitzek2006], [Guenole2020] | [`algorithm`](options/algorithm/index.md) |
 | `timestep` | `CollisionTime(fraction = 1/50)` | $\Delta t = t_\text{col}/50$, with $t_\text{col} = \pi\sqrt{M_n/k_n}$ for the lightest pair and stiffest contact (undamped Hooke) | any fraction, or a fixed number | [Silbert2001] | [`timestep`](options/timestep/index.md) |
 
-FIRE's parameters ([§14](https://github.com/ColtonKawamura/SoftPack/wiki/FIRE-settings)), all from the LAMMPS FIRE 2.0 defaults
-in [Guenole2020] (Table 1), with $\Delta t_\text{start}$ the step from `timestep`:
+FIRE's parameters ([§14](https://github.com/ColtonKawamura/SoftPack/wiki/FIRE-settings)). The first ten are the LAMMPS FIRE 2.0 defaults
+in [Guenole2020] (Table 1); `integrator`, `displacement_max`, `damping` and `drag` are SoftPack additions. $\Delta t_\text{start}$ is the step from `timestep`:
 
 | `FIRE` setting | Default | Meaning | Details |
 |:---|:---|:---|:---|
 | `timestep_max` | `10` | $\Delta t_\text{max} = 10\,\Delta t_\text{start}$ | [`FIRE()`](options/algorithm/FIRE.md) |
 | `timestep_min` | `0.02` | $\Delta t_\text{min} = 0.02\,\Delta t_\text{start}$ | [`FIRE()`](options/algorithm/FIRE.md) |
 | `delay` | `20` | $N_\text{delay} = 20$ downhill steps before the step may grow | [`FIRE()`](options/algorithm/FIRE.md) |
-| `timestep_grow` | `1.1` | $\Delta t \leftarrow \min(1.1\,\Delta t, \Delta t_\text{max})$ | [`FIRE()`](options/algorithm/FIRE.md) |
+| `timestep_grow` | `1.1` | $\Delta t \leftarrow \mathrm{min}(1.1\,\Delta t, \Delta t_\text{max})$ | [`FIRE()`](options/algorithm/FIRE.md) |
 | `timestep_shrink` | `0.5` | $\Delta t \leftarrow 0.5\,\Delta t$ after an uphill move, if that stays $\ge \Delta t_\text{min}$ | [`FIRE()`](options/algorithm/FIRE.md) |
 | `mixing_coefficient` | `0.25` | $\alpha_\text{start} = 0.25$ in $\mathbf v \leftarrow (1-\alpha)\mathbf v + \alpha\lvert\mathbf v\rvert\hat{\mathbf F}$ | [`FIRE()`](options/algorithm/FIRE.md) |
 | `mixing_shrink` | `0.99` | $\alpha \leftarrow 0.99\,\alpha$ on each growth step | [`FIRE()`](options/algorithm/FIRE.md) |
 | `uphill_max` | `2000` | stop, unconverged, after 2000 consecutive uphill moves | [`FIRE()`](options/algorithm/FIRE.md) |
 | `inertia_correction` | `true` | move back half a step after an uphill move (LAMMPS `halfstepback`) | [`FIRE()`](options/algorithm/FIRE.md) |
 | `delay_initial` | `true` | apply the delay at the start of the run too | [`FIRE()`](options/algorithm/FIRE.md) |
+| `displacement_max` | `0.1` | cap one step's displacement, in reference diameters | [`FIRE()`](options/algorithm/FIRE.md) |
 | `integrator` | `:semi_implicit_euler` | semi-implicit (symplectic) Euler; `:velocity_verlet` is the option | [`FIRE()`](options/algorithm/FIRE.md) |
 | `damping`, `drag` | `nothing`, `nothing` | FIRE removes energy by its own velocity rules | [`FIRE()`](options/algorithm/FIRE.md) |
 
@@ -199,7 +200,7 @@ The options' sources: `TwoContact` [Ishima2023], `ForceFloor` [Shundyak2007],
 
 | Setting | Default | Meaning | Other choices | Main source | Details |
 |:---|:---|:---|:---|:---|:---|
-| `seed` | `1` | random numbers from `StableRNG(1)`, the same stream on every machine and Julia version | any integer (`StableRNG` accepts $0 \le \text{seed} \le 2^{64} - 1$) | **SoftPack choice** (value); [StableRNGs], [JuliaRandom] (generator) | [`seed`](options/seed.md) |
+| `seed` | `1` | random numbers from `StableRNG(1)`, the same stream on every machine and Julia version | any integer $0 \le \text{seed} \le 2^{63} - 1$ (`typemax(Int)`) | **SoftPack choice** (value); [StableRNGs], [JuliaRandom] (generator) | [`seed`](options/seed.md) |
 | file format (`write_packing`) | HDF5 | one binary file, read natively by Julia, Python and MATLAB | CSV | [HDF5jl], [h5py], [MATLABh5read] | [`path`](../write_packing/path.md) |
 | `write_packing` `rattlers_file` | `false` | the file holds the packing without rattlers only | `true`: a second file with every particle | **SoftPack choice** | [`rattlers_file`](../write_packing/rattlers_file.md) |
 | `write_packing` `compression` | `nothing` | uncompressed, so datasets can be memory-mapped | `:gzip` (level 4) | [HDF5jl], [h5py] | [`compression`](../write_packing/compression.md) |

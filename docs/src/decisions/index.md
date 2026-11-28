@@ -15,7 +15,7 @@ goes wrong must leave its work where you can look at it.
 | Card | Topic | Choice | Status |
 |:---|:---|:---|:---|
 | [T-vcne](T-vcne.md) | FIRE counters, alpha schedule | the wiki's Algorithm 2, as in LAMMPS | in code |
-| [T-d66w](T-d66w.md) | Time-step rule | lightest pair, shortest of normal and tangential, fixed step in $\sqrt{m_\min/k}$ | in code |
+| [T-d66w](T-d66w.md) | Time-step rule | lightest pair, shortest of normal and tangential, fixed step in $\sqrt{m_{\mathrm{min}}/k}$ | in code |
 | [T-tx4b](T-tx4b.md) | Stability with damping | margins are estimates; measure and warn; cap FIRE with damping | in code |
 | [T-c822](T-c822.md) | Validation | `ArgumentError` naming the keyword; `:error` keeps the packing | in code |
 | [T-hg7w](T-hg7w.md) | Rattler rules | repeat every rule; $D+1$ frictionless; cone test everywhere but `TwoContact` | in code |

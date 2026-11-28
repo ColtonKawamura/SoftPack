@@ -6,16 +6,16 @@
 time step had no unit.
 
 **Choice.** The step is a fraction of the shortest contact time of the lightest pair:
-$M = \min_i m_i / 2$, and the step is
-$\pi \times \text{fraction} \times \min(\sqrt{M/k_n}, \sqrt{M_t/k_t})$. For a Hertzian
+$M = \mathrm{min}_i m_i / 2$, and the step is
+$\pi \times \text{fraction} \times \mathrm{min}(\sqrt{M/k_n}, \sqrt{M_t/k_t})$. For a Hertzian
 law the stiffness is evaluated at the largest overlap the run expects, and the run-time
 check warns when a contact turns out stiffer than that. A fixed number is in units of
-$\tau = \sqrt{m_\min/k}$.
+$\tau = \sqrt{m_{\mathrm{min}}/k}$.
 
 **Why.** The lightest pair sets the fastest oscillation, so it sets the step; using the
 mean mass would let a few small particles destabilize the run. The tangential term
 matters because $M_t$ includes the rotation, so a Mindlin contact with $\nu = 0$ has a
-shorter tangential time than the normal one. The fixed-step unit uses $m_\min$ rather
+shorter tangential time than the normal one. The fixed-step unit uses $m_{\mathrm{min}}$ rather
 than $m_\text{ref}$ because a fixed number must mean the same physical time whatever the
 mass distribution; with `EqualMass` the two are identical.
 

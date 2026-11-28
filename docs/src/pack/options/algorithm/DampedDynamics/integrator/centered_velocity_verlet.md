@@ -7,8 +7,8 @@ the velocity update into a linear system:
 
 $$\left(M + \frac{\Delta t}{2} \Gamma\right) v^{n+1} = \left(M - \frac{\Delta t}{2} \Gamma\right) v^n + \Delta t \, F^n,$$
 
-and the matrix on the left is sparse, symmetric and positive definite, so one sparse
-Cholesky factorization per run and one solve per step is enough (design §8).
+and the matrix on the left is sparse, symmetric and positive definite, so the implementation
+assembles and factorizes it once per step, then solves it once per step (design §8).
 
 Because the damping is treated implicitly, the integrator is stable for any damping ratio
 at the time step the contacts allow, and the damping does not lag the motion. That is why

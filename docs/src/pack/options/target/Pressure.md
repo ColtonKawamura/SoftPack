@@ -16,14 +16,15 @@ times $P_\text{target}$; the default tolerance is $10^{-4}$, so the pressure lan
 one part in ten thousand.
 
 Because a soft packing is compressed, the packing fraction depends on the pressure you ask
-for. In 2D at $N = 256$ (mean of three seeds):
+for. In 2D at $N = 256$ (mean of three seeds, with $z_\text{iso} = 3.992$ the finite-size
+isostatic value used in `benchmarks/results.md`):
 
 | $P$ | $\phi$ | $z - z_\text{iso}$ |
 |:---|---:|---:|
-| $10^{-2}$ | 0.8626 | 0.525 |
-| $10^{-3}$ | 0.8424 | 0.144 |
-| $10^{-4}$ | 0.8383 | 0.030 |
-| $10^{-5}$ | 0.8381 | 0.000 |
+| $10^{-2}$ | 0.8626 | 0.5249 |
+| $10^{-3}$ | 0.8423 | 0.1419 |
+| $10^{-4}$ | 0.8383 | 0.0325 |
+| $10^{-5}$ | 0.8380 | 0.0027 |
 
 The default $P = 10^{-4}$ sits where the backbone is almost isostatic and the packing is
 still cheap to reach: the default run takes 0.7 s.

@@ -32,7 +32,7 @@ $$d_i \in \{d_s,\; r\,d_s\}, \qquad d_s = \texttt{diameter\_small}.$$
 
 $$N_s = f\,N \text{ small}, \qquad N_l = (1-f)\,N \text{ large}, \qquad f = \texttt{fraction\_small}.$$
 
-The polydispersity (standard deviation over mean) of the default is $\sqrt{f(1-f)}\,(r-1)/(f+(1-f)r) = 1/6 = 0.167$ [OHern2003].
+The polydispersity (standard deviation over mean) of the default is $\sqrt{f(1-f)}\,(r-1)/(f+(1-f)r) = 1/6 = 0.167$ (**SoftPack note**, from the two-diameter moments).
 
 ## Why these defaults
 

@@ -6,7 +6,7 @@
 return one value per particle, truthy for a rattler:
 
 ```
-pack(rattlers = packing -> packing.forces[:, 1] .== 0)
+pack(rattlers = packing -> packing.forces[1, :] .== 0)
 ```
 
 A `BitVector` or a `Vector{Bool}` of length `N` is the natural return; anything that

@@ -14,8 +14,8 @@ packing = pack(params)
 same keywords. The result's `packing.settings` is the `PackParams` of the run, and a
 restart compares its stored copy with the new keywords.
 
-Building a `PackParams` also validates it, so an invalid setting raises an error at
-construction rather than after a minute of packing.
+The constructor stores the settings; `pack(params)` validates them before the run, so an
+invalid setting raises an error at the call rather than after a minute of packing.
 
 ## The keywords
 
