@@ -1,0 +1,8 @@
+/* Wide tables scroll sideways; long inline code wraps at spaces, never inside a name. */
+.content table {
+    display: block;
+    overflow-x: auto;
+}
+.content table code {
+    white-space: pre-wrap;
+}
