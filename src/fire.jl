@@ -98,14 +98,16 @@ function minimize!(s::System{D,NR}, fire::FIRE, timestep_start::Float64, test,
         omega, stable = check_timestep(s, timestep_start, fire)
         if omega > 0 && stable < st.timestep_max
             st.timestep_max = stable
-            push!(control.warnings, "FIRE: with damping the step is capped at " *
-                  "$(@sprintf("%.4g", stable)) s (the damped limit of the packing)")
+            message = "FIRE: with damping the step is capped at $(@sprintf("%.4g", stable)) " *
+                      "s (the damped limit of the packing)"
+            message in control.warnings || push!(control.warnings, message)
         end
     end
     # Card T-3qkf: FIRE with friction is allowed but non-standard (design §7).
     if s.friction !== nothing
-        push!(control.warnings, "FIRE with friction is a non-standard combination " *
-              "(design §7); the rotational mixing is provisional (card T-vcne)")
+        message = "FIRE with friction is a non-standard combination (design §7); the " *
+                  "rotational mixing is provisional (card T-vcne)"
+        message in control.warnings || push!(control.warnings, message)
     end
     total_force = similar(s.forces)
     total_torque = similar(s.torques)
