@@ -9,8 +9,8 @@ than pixels, so it can be redrawn later at any size.
 
 ## What a frame shows
 
-- Disks in 2D and spheres seen from above in 3D, coloured by diameter: the small
-  population in one colour, the large one in another.
+- Disks in 2D and spheres seen from above in 3D, colored by diameter: the small
+  population in one color, the large one in another.
 - In 3D the far particles are drawn first, smaller and blended toward white, so the
   depth reads without lighting or transparency.
 - In a periodic box a particle that crosses the frame is drawn again on the opposite

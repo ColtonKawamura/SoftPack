@@ -6,11 +6,16 @@ A contact whose normal force is below the run's convergence tolerance, times the
 contact force, does not count as a contact [Agnolin2007]. The particle then needs two
 effective contacts and the removal cascades.
 
+Two contacts, not the $D + 1$ of `ContactCount()` and `ForceFloor()`, is [Agnolin2007]'s
+rule: they remove a particle held by fewer than two contacts, and the cascade repeats.
+It is stricter than the isostatic count for a frictionless packing in 2D, so run this
+rule alongside `ContactCount()` if the isostatic count is the number you need.
+
 The idea is that a contact below the tolerance is one the minimization did not resolve: it
 may be an artifact of the final numbers rather than a physical contact, so a particle held
 only by such contacts is not really held. Because the threshold follows the convergence
 tolerance, a loose run removes more particles than a tight one, which is the honest
-behaviour: a loose run cannot tell a weak contact from a resolved one.
+behavior: a loose run cannot tell a weak contact from a resolved one.
 
 `floor = :tolerance` (the default) uses the convergence tolerance; a number overrides it.
 

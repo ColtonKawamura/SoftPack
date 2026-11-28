@@ -4,7 +4,7 @@
 
 What a run does when it stops without converging. The default is a **SoftPack choice**.
 
-| Choice | Default | Behaviour |
+| Choice | Default | Behavior |
 |:---|:---|:---|
 | `:warn` | **default** | log a warning and return the packing with `converged = false` |
 | `:error` |  | throw an error instead |

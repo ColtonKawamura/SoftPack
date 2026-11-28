@@ -4,7 +4,7 @@
 
 Whether an existing file may be replaced. The default is a **SoftPack choice**.
 
-| Choice | Default | Behaviour |
+| Choice | Default | Behavior |
 |:---|:---|:---|
 | `false` | **default** | stop with an `ArgumentError` if any file it would write exists |
 | `true` |  | replace the existing file |
