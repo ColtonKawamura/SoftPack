@@ -377,13 +377,13 @@ Base.@kwdef struct ContactCount <: RattlerRule
 end
 
 """
-    TwoContact(; cone_test = true)
+    TwoContact()
 
-Repeatedly remove particles with two or fewer contacts (design §9).
+Repeatedly remove particles with two or fewer contacts (design §9). It has no
+`cone_test`: a particle with two contacts is removed whether or not its cones could
+hold it, so the test would never be reached.
 """
-Base.@kwdef struct TwoContact <: RattlerRule
-    cone_test::Bool = true
-end
+struct TwoContact <: RattlerRule end
 
 """
     ForceFloor(; floor = 1e-3, cone_test = true)
@@ -548,6 +548,13 @@ function validate(p::PackParams)
     (p.snapshots === nothing || p.snapshots isa Snapshots) ||
         not_implemented("snapshots", p.snapshots)
     (p.movie === nothing || p.movie isa Movie) || not_implemented("movie", p.movie)
+    0 <= p.seed <= typemax(Int) ||
+        throw(ArgumentError("seed must lie between 0 and $(typemax(Int)), got $(p.seed)"))
+    if p.rattlers isa Unresolved && p.rattlers.floor === :tolerance &&
+       !hasproperty(p.convergence, :tolerance)
+        throw(ArgumentError("Unresolved(floor = :tolerance) needs a convergence test with " *
+                            "a force tolerance; pass an explicit floor"))
+    end
     return p
 end
 
@@ -596,6 +603,18 @@ function validate_algorithm(algorithm)
     if algorithm isa FIRE
         algorithm.integrator === :semi_implicit_euler ||
             not_implemented("FIRE integrator", algorithm.integrator)
+        algorithm.timestep_max > 0 && algorithm.timestep_min > 0 ||
+            throw(ArgumentError("FIRE timestep_max and timestep_min must be positive"))
+        algorithm.timestep_min <= algorithm.timestep_max ||
+            throw(ArgumentError("FIRE needs timestep_min <= timestep_max"))
+        algorithm.timestep_grow >= 1 ||
+            throw(ArgumentError("FIRE timestep_grow must be at least 1"))
+        (0 < algorithm.timestep_shrink <= 1) ||
+            throw(ArgumentError("FIRE timestep_shrink must lie in (0, 1]"))
+        algorithm.delay >= 0 ||
+            throw(ArgumentError("FIRE delay must be non-negative"))
+        algorithm.uphill_max >= 1 ||
+            throw(ArgumentError("FIRE uphill_max must be at least 1"))
         validate_damping(algorithm.damping)
         validate_drag(algorithm.drag)
         return algorithm

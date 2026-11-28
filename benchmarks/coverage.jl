@@ -197,10 +197,10 @@ mktempdir() do directory
                  movie = Movie(movie_path; every = 4000, size = 160)))
     if isfile(restart_path)
         attempt("recording", "restart_packing continuation",
-                opts(restart_packing = restart_path, steps_max = 200_000))
+                (restart_packing = restart_path, steps_max = 200_000))
         attempt("recording", "restart rejects a physics change",
-                opts(restart_packing = restart_path,
-                     friction = CundallStrack(friction_coefficient = 0.3));
+                (restart_packing = restart_path,
+                 friction = CundallStrack(friction_coefficient = 0.3));
                 expect_error = true)
     else
         push!(FAILURES, "recording | restart file was not written")
@@ -223,7 +223,7 @@ mktempdir() do directory
         end
         first_run === nothing && continue
         attempt("restart", "continue $(nameof(typeof(algorithm))) $(nameof(typeof(boundary))) friction=$(friction === nothing ? "off" : "on")",
-                opts(restart_packing = path, steps_max = 200_000))
+                (restart_packing = path, steps_max = 200_000))
     end
 end
 

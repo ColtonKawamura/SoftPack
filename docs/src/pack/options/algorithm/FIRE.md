@@ -33,6 +33,15 @@ values. You rarely need to touch them.
 | `damping` | `nothing` | optional contact dashpots, see [damping](DampedDynamics/damping/index.md) |
 | `drag` | `nothing` | optional Stokes drag, see [drag](DampedDynamics/drag/index.md) |
 
+## Checks
+
+FIRE validates its own parameters at the call (card T-3qkf): `timestep_min` must not
+exceed `timestep_max`, `timestep_grow` must be at least 1, `timestep_shrink` must lie in
+$(0, 1]$, and `delay` and `uphill_max` must be positive. With `damping` set, the step
+ceiling is clamped to the damped stability limit measured from the packing's stiffest
+contact (card T-tx4b). FIRE with friction runs but warns that the combination is
+non-standard (design §7); the rotational mixing is provisional.
+
 ## Stopping
 
 FIRE stops when the convergence test holds, when `steps_max` is reached, or when it has

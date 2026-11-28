@@ -6,12 +6,12 @@ The path is where the file goes; `format` picks what is written.
 
 | Choice | Default | What is written |
 |:---|:---|:---|
-| `format = :hdf5` | **default** | one HDF5 file, read natively by Julia, Python and MATLAB |
-| `format = :csv` |  | two text files, `<base>_particles.csv` and `<base>_contacts.csv` |
+| `format = :hdf5` | from `.h5` or `.hdf5` | one HDF5 file, read natively by Julia, Python and MATLAB |
+| `format = :csv` | from `.csv` | two text files, `<base>_particles.csv` and `<base>_contacts.csv` |
 
-The format is *not* inferred from the extension: writing `"packing.csv"` without
-`format = :csv` writes HDF5 into a file named `.csv`. The extension is a convention for
-the reader, and the explicit keyword is what decides.
+The format follows the extension (card T-zk8c): `.h5` and `.hdf5` are HDF5, `.csv` is
+CSV, and any other extension is an error. An explicit `format = :hdf5` or `format = :csv`
+overrides the extension, for a path whose extension says nothing.
 
 Later formats (XYZ, LAMMPS data) are on the [Roadmap](../roadmap.md).
 

@@ -6,7 +6,7 @@
     find_rattlers(packing, rule) -> BitVector
 
 Apply a rattler rule to a finished packing; `true` marks a rattler. `rule` is
-`ContactCount(...)`, `TwoContact(...)`, `ForceFloor(...)`, `Unresolved(...)`, `nothing`
+`ContactCount(...)`, `TwoContact()`, `ForceFloor(...)`, `Unresolved(...)`, `nothing`
 (no rattlers) or any function that takes the `Packing` and returns one `Bool` per particle
 (PROVISIONAL T-hg7w / T-1x2y: the design says "a function of the contact network" and has
 not fixed its argument).
@@ -36,7 +36,8 @@ friction for `ContactCount`, 3 for `TwoContact` (removes two or fewer), 2 for
 rule_minimum(::ContactCount, dimension::Int, frictional::Bool) =
     frictional ? 2 : dimension + 1
 rule_minimum(::TwoContact, dimension::Int, frictional::Bool) = 3
-rule_minimum(::ForceFloor, dimension::Int, frictional::Bool) = 2
+rule_minimum(::ForceFloor, dimension::Int, frictional::Bool) =
+    frictional ? 2 : dimension + 1
 rule_minimum(::Unresolved, dimension::Int, frictional::Bool) = 2
 
 """
@@ -68,7 +69,7 @@ function find_rattlers(rule::RattlerRule, table::ContactTable, count::Int, setti
     threshold = effective_floor(rule, mean_force, settings)
     minimum = rule_minimum(rule, settings.dimension, settings.friction !== nothing)
     μ = friction_coefficient(settings)
-    cone = rule isa ContactCount && rule.cone_test && μ !== nothing
+    cone = !(rule isa TwoContact) && rule.cone_test && μ !== nothing
     rattler = falses(count)
     while true
         neighbors = [Int[] for _ in 1:count]

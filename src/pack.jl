@@ -49,6 +49,12 @@ function restart_pack(kwargs)
     isfile(path) || throw(ArgumentError("restart_packing = $(repr(path)) does not exist"))
     stored, system, previous_control, previous, provenance = read_state(path)
     params = merge_restart_settings(stored, kwargs)
+    if !haskey(kwargs, :steps_max)
+        # Card T-s3tz: an omitted steps_max starts a fresh budget counted from the restart.
+        fields = Dict{Symbol,Any}(name => getfield(params, name) for name in fieldnames(PackParams))
+        fields[:steps_max] = previous_control.step + params.steps_max
+        params = PackParams(; fields...)
+    end
     validate(params)
     timestep = previous.time_step
     control = RunControl(copy(system.positions), system.side, params;
@@ -70,7 +76,7 @@ function restart_pack(kwargs)
 end
 
 const RESTART_MUTABLE = (:steps_max, :failure_action, :convergence, :restart_file,
-                         :snapshots, :movie)
+                         :snapshots, :movie, :pressure_tolerance)
 
 """
     merge_restart_settings(stored, kwargs) -> PackParams
@@ -86,7 +92,10 @@ function merge_restart_settings(stored::PackParams, kwargs)
             throw(ArgumentError("unknown setting $(repr(key))"))
         if key in RESTART_MUTABLE
             fields[key] = value
-        elseif !isequal(getfield(stored, key), value)
+        else
+            # Card T-s3tz: an explicitly passed keyword outside the run-control list is an
+            # error even when it equals the stored value, because saying it again says
+            # nothing about intent.
             throw(ArgumentError("a restart may change only $(join(RESTART_MUTABLE, ", ")), " *
                                 "not $(repr(key)) (design §6)"))
         end
@@ -189,6 +198,14 @@ function finish_packing(s::System{D,NR}, params::PackParams, control::RunControl
     if params.restart_file !== nothing
         write_state(params.restart_file.path, s, control, results(packing))
     end
+    remaining = count - sum(rattlers)
+    z_iso = params.friction === nothing ?
+        2 * (D * (remaining - 1) + 1) / max(remaining, 1) : D + 1
+    if packing.contact_number < z_iso - 1e-6
+        push!(control.warnings, "the remaining backbone is hypostatic: z = " *
+              "$(round(packing.contact_number, digits = 4)) against z_iso = " *
+              "$(round(z_iso, digits = 4))")
+    end
     check_timestep_warning(s, timestep, params)
     finish_movie!(control)
     for message in control.warnings
@@ -199,7 +216,7 @@ function finish_packing(s::System{D,NR}, params::PackParams, control::RunControl
                   "steps: P = $(@sprintf "%.4g" packing.pressure), force residual " *
                   "$(@sprintf "%.2e" residual). The packing is returned with " *
                   "converged = false."
-        params.failure_action === :error && error(message)
+        params.failure_action === :error && throw(PackingError(message, packing))
         @warn message
     end
     return packing

@@ -72,11 +72,12 @@ function timestep_start(rule::CollisionTime, masses::Vector{Float64},
     return rule.fraction * pi * min(normal_time, tangential_time)
 end
 
-# PROVISIONAL T-d66w: a fixed step is in units of tau = sqrt(m_ref / k); the card's option 1
-# writes sqrt(m_min / k), which is the same number for EqualMass.
+# Card T-d66w, option 1: a fixed step is in units of tau = sqrt(m_min / k), the elastic
+# time of the lightest particle, so the same number is the same physical step for any
+# mass distribution. With EqualMass it equals the old sqrt(m_ref / k).
 timestep_start(value::Real, masses::Vector{Float64}, stiffness::Float64,
                mass_ref::Float64; kwargs...) =
-    Float64(value) * sqrt(mass_ref / stiffness)
+    Float64(value) * sqrt(minimum(masses) / stiffness)
 
 """
     stable_step(integrator, omega, zeta)

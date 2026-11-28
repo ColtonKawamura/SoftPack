@@ -110,7 +110,8 @@ function mean_kinetic_energy(state::RunState)
     total = 0.0
     @inbounds for i in eachindex(state.positions)
         total += 0.5 * state.masses[i] * dot_in_order(state.velocities[i], state.velocities[i])
-        total += 0.5 * state.spins[i][1]^2 * state.moments_of_inertia[i]
+        total += 0.5 * state.moments_of_inertia[i] *
+                 dot_in_order(state.spins[i], state.spins[i])
     end
     return total / length(state.positions)
 end

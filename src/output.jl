@@ -28,8 +28,10 @@ Write a `Packing` to `path` (design §11).
   `rattler` flag.
 - `compression = :gzip` uses gzip level 4, or give `(:gzip, level)`.
 - `overwrite = false` refuses to replace an existing file.
-- `format = :csv` writes `<path>_particles.csv` and `<path>_contacts.csv` with the same
-  columns (PROVISIONAL T-zk8c: the design lists CSV as an option but not its layout).
+- The format follows the extension: `.h5` or `.hdf5` is HDF5, `.csv` is CSV, anything
+  else is an error unless `format` says otherwise. `format = :csv` writes
+  `<path>_particles.csv` and `<path>_contacts.csv` with the same columns (card T-zk8c).
+  A CSV export cannot restart a run; use HDF5 for that.
 
 Files are written to a temporary file in the same directory and renamed into place, so a
 job killed during a write leaves any existing file intact.
@@ -38,7 +40,14 @@ function write_packing(path::AbstractString, p::Packing;
                        rattlers_file::Bool = false,
                        compression = nothing,
                        overwrite::Bool = false,
-                       format::Symbol = :hdf5)
+                       format::Union{Nothing,Symbol} = nothing)
+    if format === nothing
+        extension = lowercase(splitext(path)[2])
+        format = extension in (".h5", ".hdf5") ? :hdf5 :
+                 extension == ".csv" ? :csv :
+                 throw(ArgumentError("cannot tell the format from $(repr(path)): use a .h5 " *
+                                     "or .csv extension, or pass format = :hdf5 or :csv"))
+    end
     format in (:hdf5, :csv) ||
         throw(ArgumentError("format must be :hdf5 or :csv, got $(repr(format))"))
     targets = [path]

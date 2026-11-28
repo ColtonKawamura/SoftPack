@@ -1,5 +1,11 @@
 # SoftPack design decisions and their references
 
+
+> **Open points.** The board's decision cards are settled in the Documenter
+> section *Design decisions* (`docs/src/decisions/`), one page per card, with the
+> reason and the evidence. Where this document and a decision page disagree, the
+> decision page is the later word.
+
 Every design decision for SoftPack's `pack()`, with the sources behind it. Quotes are
 copied from the sources' full texts: the published versions for [OHern2003],
 [Shundyak2007], [Somfai2007] and [Henkes2010], the arXiv versions or official docs

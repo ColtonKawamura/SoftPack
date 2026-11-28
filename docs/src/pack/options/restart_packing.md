@@ -15,9 +15,11 @@ the accepted state, which is why continuing a finished packing leaves it unchang
 an interrupted run resumes exactly where it stopped.
 
 Only run-control settings may differ from the stored ones: `steps_max`, `failure_action`,
-`convergence`, `restart_file`, `snapshots` and `movie`. Anything else that differs raises
-an error, because changing the physics halfway through would make the result a mixture of
-two runs.
+`convergence`, `restart_file`, `snapshots`, `movie` and `pressure_tolerance`. Any other
+keyword raises an error even when it equals the stored value, because passing it says you
+expect it to do something (card T-s3tz). An omitted `steps_max` starts a fresh budget
+counted from the restart, and a recording schedule counts `every` from the step the job
+resumed at.
 
 A restart is also the clean way to tighten a tolerance: run to $10^{-4}$, then continue to
 $10^{-8}$ without paying for the first part twice.

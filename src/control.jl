@@ -39,8 +39,8 @@ mutable struct Schedule
     started::Float64
 end
 
-Schedule(every::Integer, started::Float64) =
-    Schedule(every, Int(every), Inf, started)
+Schedule(every::Integer, started::Float64, step::Int = 0) =
+    Schedule(every, step + Int(every), Inf, started)
 Schedule(every::Period, started::Float64) =
     Schedule(every, typemax(Int), started + Dates.Millisecond(every).value / 1000, started)
 
@@ -103,10 +103,10 @@ function RunControl(positions::Vector{SVector{D,Float64}}, side::Float64,
     started = time()
     strain = params.protocol isa IsotropicCompression ? params.protocol.strain_step : 0.0
     restart_schedule = params.restart_file isa RestartFile ?
-        Schedule(params.restart_file.every, started) : nothing
+        Schedule(params.restart_file.every, started, step) : nothing
     snapshot_schedule = params.snapshots isa Snapshots ?
-        Schedule(params.snapshots.every, started) : nothing
-    movie_schedule = params.movie isa Movie ? Schedule(params.movie.every, started) : nothing
+        Schedule(params.snapshots.every, started, step) : nothing
+    movie_schedule = params.movie isa Movie ? Schedule(params.movie.every, started, step) : nothing
     movie_directory = params.movie isa Movie ? mktempdir(; prefix = "softpack-movie-") : nothing
     movie_path = params.movie isa Movie ? params.movie.path : ""
     movie_size = params.movie isa Movie ? params.movie.size : 640

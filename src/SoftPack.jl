@@ -21,11 +21,11 @@ using TOML
 using Random
 using SparseArrays
 using LinearAlgebra: Diagonal, Symmetric, cholesky, iszero
-using StableRNGs: StableRNG
+using StableRNGs
 using StaticArrays: SVector
 using HDF5
 
-export pack, PackParams, Packing, ContactTable, RunState, find_rattlers, write_packing,
+export pack, PackParams, Packing, PackingError, ContactTable, RunState, find_rattlers, write_packing,
        is_converged, run_state, contact_pressure, mean_normal_force,
        Bidisperse, UniformPolydisperse, Monodisperse,
        Hookean, Hertzian, CundallStrack, Mindlin,

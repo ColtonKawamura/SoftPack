@@ -64,6 +64,19 @@ struct Packing{D,NR,S,C}
     control::C
 end
 
+"""
+    PackingError
+
+Thrown by `pack()` when `failure_action = :error` and the run does not converge. The
+attack carries the unfinished `Packing` in `err.packing`, so nothing is lost when the
+error is caught.
+"""
+struct PackingError <: Exception
+    message::String
+    packing::Any
+end
+Base.showerror(io::IO, err::PackingError) = print(io, err.message)
+
 Base.ndims(::Packing{D}) where {D} = D
 rotation_ndims(::Packing{D,NR}) where {D,NR} = NR
 

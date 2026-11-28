@@ -8,8 +8,10 @@ deterministic once the start is fixed. The same seed therefore gives the same pa
 the last bit, on Julia 1.10, 1.12 and 1.13, because every reduction in the trajectory runs
 in a fixed order (design §10).
 
-Use a different seed to get an independent member of the ensemble; use the same seed to
-reproduce a run or to compare two settings on the same start.
+A seed must lie between 0 and `typemax(Int)`; anything outside raises an error rather
+than wrapping, because a silent modulo would map two seeds to the same packing (card
+T-73sy). Use a different seed to get an independent member of the ensemble; use the same
+seed to reproduce a run or to compare two settings on the same start.
 
 **Default:** `1`
 

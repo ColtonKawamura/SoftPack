@@ -377,7 +377,9 @@ end
     @test SoftPack.contact_number(table, rattlers) == 3.0
     @test find_rattlers(nothing, table, 7, settings) == falses(7)
     @test findall(find_rattlers(TwoContact(), table, 7, settings)) == [5, 6, 7]
-    @test findall(find_rattlers(ForceFloor(floor = 0.5), table, 7, settings)) == [6, 7]
+    # card T-hg7w: ForceFloor needs D + 1 contacts without friction, like ContactCount,
+    # so particle 5 (kept at two contacts before) is now a rattler too
+    @test findall(find_rattlers(ForceFloor(floor = 0.5), table, 7, settings)) == [5, 6, 7]
     @test all(find_rattlers(ForceFloor(floor = 2.0), table, 7, settings))
     # the cone test: particle 1 has exactly two contacts; its neighbours 2 and 3 keep
     # three each, so only the geometry of particle 1 decides
@@ -580,7 +582,14 @@ end
 @testset "failure handling (§6)" begin
     p = @test_logs (:warn, r"did not converge") pack(steps_max = 500)
     @test !p.converged && p.stop_reason === :steps_max && p.steps == 500
-    @test_throws ErrorException pack(steps_max = 500, failure_action = :error)
+    error_thrown = try
+        pack(steps_max = 500, failure_action = :error)
+        nothing
+    catch e
+        e
+    end
+    @test error_thrown isa PackingError
+    @test error_thrown.packing isa Packing && !error_thrown.packing.converged
 end
 
 @testset "refused settings are named" begin

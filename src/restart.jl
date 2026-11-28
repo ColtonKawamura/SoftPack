@@ -88,7 +88,7 @@ end
 
 function rattlers_from_dict(d)
     (d === nothing || d == "nothing") && return nothing
-    haskey(d, "two") && return TwoContact(cone_test = d["cone_test"])
+    haskey(d, "two") && return TwoContact()
     if haskey(d, "floor")
         floor = d["floor"]
         return floor == "tolerance" ? Unresolved(floor = :tolerance,
@@ -265,6 +265,7 @@ function write_state(path::AbstractString, s::System{D,NR}, control::RunControl{
             attributes(f)["julia_version"] = string(VERSION)
             attributes(f)["seed"] = control.params.seed
             attributes(f)["rng"] = "StableRNGs.LehmerRNG"
+            attributes(f)["rng_version"] = rng_version()
             attributes(f)["dimension"] = D
             attributes(f)["settings"] = settings_toml(control.params)
             attributes(f)["converged"] = results.converged
@@ -431,3 +432,13 @@ function read_state(path::AbstractString)
         return params, system, control, results, provenance
     end
 end
+
+
+"""
+    rng_version()
+
+The version of StableRNGs that drew the run; recorded so a packing file says which
+generator produced it (card T-jc2b).
+"""
+rng_version() = string(Base.pkgversion(StableRNGs))
+# function_rng_version_marker

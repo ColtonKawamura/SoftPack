@@ -35,8 +35,10 @@ FIRE's semi-implicit Euler and for the lagged integrators.
 pack(timestep = 0.02)
 ```
 
-A number is read in units of $\sqrt{m_\text{ref}/k}$; with the default stiffness and
-equal masses that is the same number as the `CollisionTime` value with fraction 0.02.
+A number is read in units of $\tau = \sqrt{m_\min/k}$, the elastic time of the lightest
+particle (card T-d66w), so the same number is the same physical step whatever the mass
+distribution; with the default stiffness and equal masses it equals the `CollisionTime`
+value with fraction 0.02.
 
 ## Archival reference
 

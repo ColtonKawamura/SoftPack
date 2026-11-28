@@ -92,6 +92,21 @@ function minimize!(s::System{D,NR}, fire::FIRE, timestep_start::Float64, test,
     fill!(velocities, zero(SVector{D,Float64}))
     fill!(spins, zero(SVector{NR,Float64}))
     evaluate_forces!(s)
+    # Card T-tx4b, option 1: with dashpots the stable step is shorter than the undamped
+    # one, so FIRE's step ceiling is clamped to the damped stability limit of the packing.
+    if fire.damping !== nothing
+        omega, stable = check_timestep(s, timestep_start, fire)
+        if omega > 0 && stable < st.timestep_max
+            st.timestep_max = stable
+            push!(control.warnings, "FIRE: with damping the step is capped at " *
+                  "$(@sprintf("%.4g", stable)) s (the damped limit of the packing)")
+        end
+    end
+    # Card T-3qkf: FIRE with friction is allowed but non-standard (design §7).
+    if s.friction !== nothing
+        push!(control.warnings, "FIRE with friction is a non-standard combination " *
+              "(design §7); the rotational mixing is provisional (card T-vcne)")
+    end
     total_force = similar(s.forces)
     total_torque = similar(s.torques)
     step = 0

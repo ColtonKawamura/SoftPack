@@ -26,6 +26,11 @@ With $\mu = 0.3$ that is $\theta \ge 146^\circ$: the two contacts must be nearly
 A two-contact particle that fails the test is removed, because no force it can transmit
 would hold it. `cone_test = true` (the default) applies it.
 
+The cone test runs under every rule except `TwoContact()`, which removes two-contact
+particles before the test could matter (card T-hg7w). It sees only contacts above the
+rule's force floor, so a contact the rule has already declared broken cannot keep a
+particle.
+
 The cone test is also where a bug in an earlier version emptied whole frictional packings:
 the direction from a particle to its contact point is $-n$ when the particle is the first
 member of the pair and $+n$ when it is the second, and using $n$ for both mixed the angle

@@ -7,7 +7,8 @@ as a contact (design §9):
 
 $$f_n < \text{floor} \times \langle f_n \rangle .$$
 
-The particle then needs at least two effective contacts, and the removal cascades as usual.
+The particle then needs $D + 1$ effective contacts without friction, or two with
+friction, exactly like `ContactCount()` (card T-hg7w), and the removal cascades as usual.
 With the default floor $10^{-3}$, contacts that carry a thousandth of the mean force are
 treated as broken, so a particle held only by such contacts is removed.
 
@@ -20,7 +21,7 @@ at a loose tolerance. `ForceFloor()` puts the threshold where you set it.
 | Option | Default | Meaning |
 |:---|:---|:---|
 | `floor` | `1e-3` | the force threshold, relative to the mean contact force |
-| `cone_test` | `true` | accepted; the cone test currently runs only for `ContactCount()` |
+| `cone_test` | `true` | apply the friction-cone test to two-contact particles |
 
 ## Archival reference
 
