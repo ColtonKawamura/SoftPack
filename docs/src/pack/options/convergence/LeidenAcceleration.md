@@ -11,6 +11,11 @@ with $k$ the contact stiffness and $d_\text{ref}$, $m_\text{ref}$ the reference 
 and mass. The right-hand side is the acceleration a contact force of $k d_\text{ref}$
 would give the reference mass, so $\varepsilon$ is again relative.
 
+With friction the rotational part counts too: the angular acceleration
+$|\mathbf T_i|/I_i$, times $d_\text{ref}$ so that it carries the same units, must be below
+the same threshold. The paper states the translational rule only; including the rotation
+is a SoftPack choice, since a particle spinning in place is not at rest.
+
 `LeidenAcceleration()` replaces the `RelativeForce` test for the force balance; the
 pressure band is asked separately, as for every test.
 
