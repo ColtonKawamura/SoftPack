@@ -251,7 +251,9 @@ end
     write_state(path, system, control, results)
 
 Write the full run state to `path` in the restart format, atomically: a temporary file in
-the same directory is renamed over `path` (design §6, "Safe writes").
+the same directory is renamed over `path` (design §6, "Safe writes"). With
+`snapshots = false` the collected snapshot frames are not written; mid-run restart files
+use that, since snapshots are output (§11) rather than run state.
 """
 function write_state(path::AbstractString, s::System{D,NR}, control::RunControl{D},
                      results::RunResults; compression = nothing,

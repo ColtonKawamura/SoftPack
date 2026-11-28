@@ -433,8 +433,8 @@ const Interval = Union{Integer,Period}
 """
     Snapshots(; every)
 
-Record the particle positions every `every` steps (or wall-clock `every`) during the run
-(design §11). `write_packing` stores them.
+Record the particle positions every `every` steps (or wall-clock `every`, which must be
+positive) during the run (design §11). `write_packing` stores them.
 """
 Base.@kwdef struct Snapshots
     every::Interval
@@ -443,9 +443,10 @@ end
 """
     Movie(path; every, size = 640, fps = 25)
 
-Render a frame every `every` steps (or wall-clock `every`) during the run and encode them
-into `path` with ffmpeg at the end (design §11). The image is `size` pixels wide; `.gif`
-and `.mp4` are understood.
+Render a frame every `every` steps (or wall-clock `every`, which must be positive) during
+the run and encode them into `path` with ffmpeg at the end (design §11). The image is
+`size` pixels wide and `size` and `fps` must be positive; `.gif` and `.mp4` are
+understood.
 """
 Base.@kwdef struct Movie
     path::String
@@ -459,8 +460,9 @@ Movie(path::AbstractString; every, size::Int = 640, fps::Int = 25) =
 """
     RestartFile(path; every)
 
-Save the run's full state to `path` every `every` steps (or wall-clock `every`), and again
-when the run stops (design §6). `restart_packing = path` continues from such a file.
+Save the run's full state to `path` every `every` steps (or wall-clock `every`, which must
+be positive), and again when the run stops (design §6). `restart_packing = path` continues
+from such a file.
 """
 Base.@kwdef struct RestartFile
     path::String

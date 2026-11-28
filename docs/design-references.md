@@ -352,6 +352,15 @@ starting as the initial state. Repeat:
 - **SoftPack choice** for the rule. It needs only the target and `pressure_tolerance`,
   gives the same steps for the same inputs, and approaches the target from below, since
   the accepted state always lies below the band. $\epsilon$ is not enlarged again.
+- Dense limit. A trial that would put the packing fraction at or above 1 is rejected
+  before it is minimized, because past that point the particles overlap by more than
+  their diameter and the contact model no longer describes a packing. It counts as a
+  rejection and $\epsilon \to \epsilon/2$, like an over-pressure trial, so a large
+  `strain_step` still works. If the step cannot shrink below the dense limit, the run
+  ends with `stop_reason = :packing_fraction_max` and `converged = false`, on the last
+  accepted state, whose pressure is below the target. **SoftPack choice**, so an
+  out-of-reach target fails visibly instead of returning a box smaller than its
+  particles.
 - Every minimization counts toward `steps_max` (§5). A run that reaches it, or one
   whose $\epsilon$ falls below $10^{-14}$, is returned with `converged = false` (§6).
 - Force floor. With no contact, $\langle f_n\rangle = 0$ and the test of
