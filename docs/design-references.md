@@ -202,8 +202,8 @@ dimensionless pressure, which says how deeply the particles overlap.
 
 $$\text{2D: } \frac{P}{k} = \frac{z\varphi}{\pi}\,\frac{\langle\delta\rangle}{d}, \qquad \text{3D: } \frac{P\,d}{k} = \frac{z\varphi}{\pi}\,\frac{\langle\delta\rangle}{d}.$$
 
-  Near jamming $z\varphi/\pi$ is about 1.1 in 2D ($z \approx 4$, $\varphi \approx 0.84$)
-  and 1.2 in 3D ($z \approx 6$, $\varphi \approx 0.64$) (our conversion), so the
+  Near jamming $z\varphi/\pi = 4\times0.84/\pi = 1.07$ in 2D ($z \approx 4$, $\varphi \approx 0.84$)
+  and $6\times0.64/\pi = 1.22$ in 3D ($z \approx 6$, $\varphi \approx 0.64$) (our conversion), so the
   dimensionless pressure is the typical overlap as a fraction of a diameter.
 - The pressure also measures the distance to jamming: [OHern2003] find that "the
   pressure vanishes as a power law" as $\varphi \to \varphi_c^+$,
@@ -219,7 +219,8 @@ $$\frac{P}{k\,d^{\,2-D}} \sim \frac{\langle\delta\rangle}{d} \sim \varphi - \var
 - This is how the field reports pressure. Jamming papers give it in units of the
   contact stiffness: [OHern2003] "The pressure p, stress Σ, bulk modulus B, and shear
   modulus G are measured in units of" $\epsilon/\sigma^{d}$ ($d$ the dimension there),
-  which for SoftPack's units is $k$ in 2D and $k/d$ in 3D. DEM papers use the same
+  which for SoftPack's units is the Hookean pressure unit $k\,d^{2-D}$ ($k$ in 2D,
+  $k/d$ in 3D; for Hertzian contacts $k\,d^{5/2-D}$, §2 "Units"). DEM papers use the same
   ratio, inverted: [Agnolin2007] "The elastic contact law introduces a dimensionless
   stiffness parameter κ", $\kappa = (\tilde E/P)^{2/3}$ for Hertz contacts, with
   "Under pressure P, the typical force in a contact is of order P a²" and "κ sets the
@@ -281,11 +282,12 @@ wall on every side of the box.
   only. With `friction = nothing` the walls are frictionless either way.
   **SoftPack choice.**
 - The pressure below needs no extra term: a wall contact counts like a pair contact, with
-  $\ell^{c} = h$, the distance from the particle's center to the wall, and $V = L^{D}$.
+  $\ell^{c} = h$, the distance from the particle's center to the wall, and $\Omega = L^{D}$
+the box area (2D) or volume (3D).
   At force balance the sum equals the mean wall pressure, from the sum of the wall
   contact forces $f_n^{c}$ over the $2D$ walls of area $L^{D-1}$,
 
-$$P = \frac{1}{D\,V}\left(\sum_{\text{pairs}} f_n^{c}\,\ell^{c} + \sum_{\text{walls}} f_n^{c}\,h^{c}\right) = \frac{1}{2D\,L^{D-1}}\sum_{\text{walls}} f_n^{c}.$$
+$$P = \frac{1}{D\,\Omega}\left(\sum_{\text{pairs}} f_n^{c}\,\ell^{c} + \sum_{\text{walls}} f_n^{c}\,h^{c}\right) = \frac{1}{2D\,L^{D-1}}\sum_{\text{walls}} f_n^{c}.$$
 
   **SoftPack note.** It follows from $\sum_i \mathbf r_i\cdot\mathbf F_i = 0$ with the
   origin in a corner. Checked on the walls packing of the worked example below: the two
@@ -523,7 +525,9 @@ pack(mass = Density(1.0))
 
 **Reference mass.** The mass scale $m_\text{ref}$ is the `EqualMass` value (1 by default)
 and, with `Density`, the mean mass $\frac1N\sum_i m_i$. The time unit is
-$\tau = \sqrt{m_\text{ref}/k}$ (§8).
+$\tau = \sqrt{m_\text{ref}\,d_\text{ref}^{2-\alpha}/k}$ (§2 "Units"), which is
+$\sqrt{m_\text{ref}/k}$ for Hookean contacts and $\sqrt{m_\text{ref}\,d_\text{ref}^{1/2}/k}$
+for Hertzian ones (§8).
 
 - **SoftPack choice**: no cited paper sets a mass or time scale from a small or smallest
   particle. [OHern2003] give every particle the same mass, so $m_\text{ref}$ is that mass,
@@ -969,6 +973,10 @@ so while underdamped it decays at $\beta_\ell = -\mathrm{Re}\,\lambda_\ell = (a 
 - Stokes drag is the $a$ term, with $a$ the drag rate. Then $\beta_\ell = a/2$ for every
   mode and $\zeta_\ell = a/(2\,\omega_\ell)$: soft modes are overdamped and creep,
   relaxing at about $\omega_\ell^2/a$.
+- A particle touching nothing is a zero mode of $\mathbf K_0$, so the $b$ term gives it
+  no damping at all: its velocity is constant. With `drag = nothing` such a particle
+  drifts forever, and a `KineticEnergy()` test can never pass (the force tests do not
+  see a uniform drift). Drag, the $a$ term, damps every particle.
 
 **SoftPack note** (standard result for Rayleigh damping; not taken from a cited
 paper).
@@ -1028,14 +1036,18 @@ pack(algorithm = DampedDynamics(damping = ContactDamping(normal = 0.98)))
   maximum cohesive force, zero for SoftPack's particles.) [Agnolin2007] use the same
   form, their Eq. (5): $\alpha(h) = \zeta\sqrt{2mK_N(h)}$, which grows as $h^{1/4}$
   for Hertz contacts.
-- The value 0.98: [Agnolin2007] "we generally use a strong dissipation, ζ = 0.98, to
-  approach equilibrium faster", and "the initial motivation for choosing ζ < 1 is the
-  computational inefficiency of overdamped contacts with ζ > 1 in the case of linear
-  contact elasticity." For Hooke contacts, $\zeta = 0.98$ gives a restitution
-  coefficient $e = \exp\left(-\pi\zeta/\sqrt{1-\zeta^2}\right) \approx 2\times10^{-7}$
-  (our conversion): a loose particle stops at its first impact.
-- The packing does not depend much on the exact value: [Agnolin2007] "changes of ζ in
-  the range between 0.7 and 1 have virtually no detectable effect", and "a value of
+- The value 0.98: [Agnolin2007] "The present study being focussed on statics, we generally use a strong dissipation,
+  ζ = 0.98, to approach equilibrium faster.", and "This particular value is admittedly rather arbitrary: the initial motivation for
+  choosing ζ < 1 is the computational inefficiency of overdamped contacts with ζ > 1 in
+  the case of linear contact elasticity." For Hooke contacts, $\zeta = 0.98$ gives a restitution
+  coefficient $e = \exp\left(-\pi\zeta/\sqrt{1-\zeta^2}\right) \approx 2\times10^{-7}$ if
+  the dashpot may pull; with the default `attractive = false` (§8, "No attractive
+  force") the contact ends when the total force first turns tensile, and $e = 0.139$
+  (our integration, §8 "Restitution"). Either way a loose particle is nearly stopped
+  after one or two impacts.
+- The packing does not depend much on the exact value: [Agnolin2007] "In the linear case, the restitution coefficient in a binary collision varies as a very
+  fastly decreasing function of ζ, and changes of ζ in the range between 0.7 and 1 have
+  virtually no detectable effect.", and "a value of
   the damping parameter ten times as small as the standard one ζ = 0.98 results in
   quite similar configuration properties".
 
@@ -1180,9 +1192,9 @@ pack(algorithm = FIRE(damping = nothing, drag = nothing))
 **Decision.** FIRE runs without contact damping or drag.
 
 - FIRE removes energy by steering the velocities toward the force and zeroing them
-  when the motion turns uphill: [Guenole2020] "the velocities are reset to zero at the
-  beginning of the pseudo-dynamic run and also periodically during the run in FIRE
-  2.0". Adding damping is not needed for FIRE to stop. **SoftPack choice**; both
+  when the motion turns uphill: [Guenole2020] "Since the velocities are reset to zero at the beginning of the pseudo-dynamic run and
+  also periodically during the run in FIRE 2.0, it turns out that both integrators are
+  almost identical, as also confirmed by preliminary simulations.". Adding damping is not needed for FIRE to stop. **SoftPack choice**; both
   settings take the same values as for `DampedDynamics`.
 
 ### Options
@@ -1193,7 +1205,7 @@ contact law and friction model.
 | Option | Setting | Used by |
 |---|---|---|
 | Any other contact damping ratios | `ContactDamping(normal = ratio, tangential = ratio)` | |
-| Moderate contact damping (restitution about 0.5) | `ContactDamping(normal = 0.2, tangential = 0.2)` | $\zeta \approx 0.18$ is our conversion of [Santos2024] |
+| Moderate contact damping (restitution 0.57) | `ContactDamping(normal = 0.2, tangential = 0.2)` | $\zeta = 0.2$; [Santos2024]'s rate 0.5 is the same strength, $\zeta = 0.177$, restitution 0.61 |
 | Normal damping only | `ContactDamping(normal = 0.98, tangential = 0)` | [Agnolin2007] |
 | Tangential ratio on the pair mass | `ContactDamping(tangential_mass = :pair)` | the usual raw-coefficient convention |
 | Raw damping rates instead of ratios | `ViscousRate(normal = 0.5, tangential = 0.5)` | [Santos2024], [LAMMPSgran] |
@@ -1214,13 +1226,15 @@ pack(algorithm = DampedDynamics(damping = ViscousRate(normal = 0.5, tangential =
 
 **Decision.** The option's defaults: dashpot force $-\gamma\,v$ with coefficient
 $\gamma = m_\text{eff}\,r$ and rate $r = 0.5$ in both directions, in units of $1/\tau$,
-$\tau = \sqrt{m_\text{ref}/k}$ ($m_\text{ref}$ the reference mass (§4), $k$ the normal stiffness constant).
+$\tau = \sqrt{m_\text{ref}/k}$ for Hookean contacts (Hertzian: $\sqrt{m_\text{ref}\,d_\text{ref}^{1/2}/k}$,
+§2 "Units"; $m_\text{ref}$ the reference mass (§4), $k$ the normal stiffness constant).
 
 - The default values are [Santos2024]'s, $r_n = r_s = 0.5/\tau$ (their $\gamma_n$,
   $\gamma_s$, LAMMPS rates) with $\tau = \sqrt{m/k_n}$, as are the equal values for
   both directions (quote above). For equal masses ($m_\text{eff} = m/2$) this is
-  $\zeta = \tfrac{r}{2}\sqrt{m_\text{eff}/k} \approx 0.18$, a restitution
-  coefficient of about 0.57 (our conversion).
+  $\zeta = \tfrac{r}{2}\sqrt{m_\text{eff}/k} = 0.177$, a restitution coefficient of
+  0.61 with the default `attractive = false` (our integration, §8 "Restitution";
+  without the clip the dashpot would give $\exp(-\pi\zeta/\sqrt{1-\zeta^2}) = 0.57$).
 - A raw rate damps Hertz contacts less as they compress; use `ContactDamping` for a
   fixed ratio. `ViscousRate` takes the same `attractive` and `coulomb_limit` keywords
   with the same defaults.
@@ -1715,7 +1729,8 @@ rotation, §8) exactly as fast as the normal one for two equal particles. That i
   contact damping exactly proportional to the unstressed stiffness. Each direction has
   $b = \gamma/k = 2\zeta/\omega$, and $\omega = \sqrt{k_n/M_n} = \sqrt{k_t/M_t}$ is the
   same in both, so $\boldsymbol\Gamma = b\,\mathbf K_0$ and every underdamped mode decays
-  at $b\,\omega_\ell^2/2$. With another ratio the tangential constant $b_t = \gamma_t/k_t$
+  at $b\,\omega_\ell^2/2$ (Hookean contacts of equal particles, so that $b$ is the same at
+  every contact; for Hertzian contacts $k$ differs between contacts, §8). With another ratio the tangential constant $b_t = \gamma_t/k_t$
   differs from $b$ and the modes mix. To first order in the damping, with $\mathbf K_t$
   the tangential-spring part of $\mathbf K_0$ (mass-weighted),
 

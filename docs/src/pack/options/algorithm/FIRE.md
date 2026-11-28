@@ -8,7 +8,8 @@ Euler step, then mixes the velocity toward the direction of the force:
 
 $$v \leftarrow (1 - \alpha) v + \alpha \, |v| \, \frac{F}{|F|},$$
 
-with $\alpha$ starting at the mixing coefficient. When the power $P = F \cdot v$ is
+with $\alpha$ starting at the mixing coefficient. When the power $W = F \cdot v$ (the FIRE papers write $P$, which SoftPack uses for the
+pressure) is
 positive the algorithm is going downhill, so the step is allowed to grow and $\alpha$ is
 shrunk; when the power is negative it is going uphill, so the step is cut and $\alpha$ is
 reset.

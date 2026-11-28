@@ -21,8 +21,8 @@ SoftPack has two functions you call. Each page opens with every default written 
 - [Naming rules](reference/naming.md): how keywords and types are named.
 - [Units and length unit](reference/units.md): the units every page uses.
 - [Theory pages](reference/theory.md): models, derivations and worked numbers behind the defaults.
-- [Notation](reference/notation.md): the symbol list, still maintained on the wiki.
-- [References](reference/references.md): the full citation list, still maintained on the wiki.
+- [Notation](reference/notation.md): every symbol, its meaning, and its units under each contact law.
+- [References](reference/references.md): the full citation list, with the pages that use each source.
 
 ## Roadmap
 
@@ -32,7 +32,7 @@ SoftPack has two functions you call. Each page opens with every default written 
 
 - **Notation** follows [Notation](reference/notation.md): $\gamma$ is a dashpot coefficient (force per velocity), rates are $r$ and $a$, and $c$ is never damping.
 - **Equations** are LaTeX: inline `$...$`, display `$$...$$`.
-- **Sources** are cited by key, for example [Somfai2005], with the full citation at the bottom of the pages that carry a reference list; the complete list is on the [wiki References page](https://github.com/ColtonKawamura/SoftPack/wiki/References).
+- **Sources** are cited by key, for example [Somfai2005], with the full citation at the bottom of the pages that carry a reference list; the complete list is on the [References](reference/references.md) page.
 - **Quotes** are copied verbatim from the sources' full texts and keep the sources' own symbols.
 - **SoftPack choice** marks a decision with no literature source, and **SoftPack note** marks our own derivation, estimate or unit conversion.
 

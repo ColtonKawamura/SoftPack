@@ -15,6 +15,14 @@ dynamics, where the velocities are physical and a packing can be mechanically ba
 while one particle still drifts. FIRE manages its velocities itself,
 so with FIRE the plain force test is the natural one.
 
+!!! warning "Needs drag on: a particle touching nothing is never damped"
+    Contact dashpots enter through the stiffness matrix ($\boldsymbol\Gamma = b\,\mathbf K_0$,
+    §8 of the design), so a particle with no contact is a zero mode of $\mathbf K_0$ and its
+    velocity does not decay at all. With `drag = nothing` a single free particle therefore
+    keeps drifting and this test never passes, however good the packing is. Add
+    `drag = StokesDrag(...)`, which damps every particle, or use a force-based test, which
+    does not see a uniform drift.
+
 ## Options
 
 | Option | Default | Meaning |

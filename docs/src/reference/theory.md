@@ -23,4 +23,4 @@ They are still on the wiki, one page per section of the design document, and eac
 | 13 | [Friction models](https://github.com/ColtonKawamura/SoftPack/wiki/Friction-models) | Cundall–Strack and Mindlin, friction coefficient, stiffness ratio |
 | 14 | [FIRE settings](https://github.com/ColtonKawamura/SoftPack/wiki/FIRE-settings) | The FIRE 2.0 algorithm and its parameters |
 
-The symbols are on the [Notation](https://github.com/ColtonKawamura/SoftPack/wiki/Notation) page and the sources on the [References](https://github.com/ColtonKawamura/SoftPack/wiki/References) page.
+The symbols are on the [Notation](notation.md) page and the sources on the [References](references.md) page.
