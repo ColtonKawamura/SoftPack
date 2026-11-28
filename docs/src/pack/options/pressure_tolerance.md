@@ -2,7 +2,7 @@
 
 *Up:* [Available options](index.md)
 
-The width of the pressure band. A compression step is accepted only when the measured
+The width of the pressure band [Agnolin2007]. A compression step is accepted only when the measured
 pressure is within this relative band of the target,
 
 $$|P - P_\text{target}| \le \text{pressure\_tolerance} \times P_\text{target},$$
@@ -24,7 +24,19 @@ the fourth decimal.
 |:---|:---|
 | any positive number | the relative half-width of the accepted pressure band |
 
-## Archival reference
+## Example
 
-- [pressure_tolerance](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#pressure_tolerance)
-- [Pressure test (pressure_tolerance)](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#pressure-test-pressure_tolerance)
+```julia
+using SoftPack
+
+packing = pack(
+    pressure_tolerance = 1e-4,  # relative band around the target
+    particles_count = 256,
+    seed = 1,
+)
+packing.pressure
+```
+
+## References
+
+- **[Agnolin2007]** Ivana Agnolin, Jean-Noël Roux (2007). *Internal states of model isotropic granular packings. I. Assembling process, geometry, and contact networks*. Physical Review E **76**, 061302. [doi:10.1103/physreve.76.061302](https://doi.org/10.1103/physreve.76.061302).

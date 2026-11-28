@@ -3,7 +3,7 @@
 *Up:* [`algorithm`](index.md)
 
 FIRE (fast inertial relaxation engine) is a minimization that behaves like a damped
-oscillator with a memory (design §14). Each step moves the particles with a semi-implicit
+oscillator with a memory [Bitzek2006], [Guenole2020]. Each step moves the particles with a semi-implicit
 Euler step, then mixes the velocity toward the direction of the force:
 
 $$v \leftarrow (1 - \alpha) v + \alpha \, |v| \, \frac{F}{|F|},$$
@@ -11,7 +11,11 @@ $$v \leftarrow (1 - \alpha) v + \alpha \, |v| \, \frac{F}{|F|},$$
 with $\alpha$ starting at the mixing coefficient. When the power $P = F \cdot v$ is
 positive the algorithm is going downhill, so the step is allowed to grow and $\alpha$ is
 shrunk; when the power is negative it is going uphill, so the step is cut and $\alpha$ is
-reset. FIRE therefore needs no tuning of its time step for a new packing, which is why it
+reset.
+
+## Why it is the default
+
+FIRE therefore needs no tuning of its time step for a new packing, which is why it
 is the default.
 
 The first ten parameters are the standard FIRE 2.0 scheme, with the LAMMPS values;
@@ -37,18 +41,18 @@ rarely need to touch them.
 
 ## Checks
 
-The mixing is mass-weighted (card T-3qkf): the speed is
+The mixing is mass-weighted: the speed is
 $\sqrt{\sum_i m_i|v_i|^2 + \sum_i I_i|\omega_i|^2}$, the force direction is
 $F_i/m_i$ and $\tau_i/I_i$, and the power that decides downhill is taken from the elastic
 forces alone, so a dashpot or drag cannot steer the minimization. With equal masses and no
 rotation this reduces to the unweighted rule, bit for bit.
 
-FIRE validates its own parameters at the call (card T-3qkf): `timestep_min` must not
+FIRE validates its own parameters at the call: `timestep_min` must not
 exceed `timestep_max`, `timestep_grow` must be at least 1, `timestep_shrink` must lie in
 $(0, 1]$, and `delay` and `uphill_max` must be positive. With `damping` set, the step
 ceiling is clamped to the damped stability limit measured from the packing's stiffest
-contact (card T-tx4b). FIRE with friction runs but warns that the combination is
-non-standard (design §7); the rotational mixing is provisional.
+contact. FIRE with friction runs but warns that the combination is
+non-standard; the rotational mixing is provisional.
 
 ## Stopping
 
@@ -57,7 +61,24 @@ spent `uphill_max` steps without finding a downhill direction. The last case is 
 as `stop_reason = :uphill_max`; it usually means the packing is stuck on a saddle and a
 restart with a different seed or a looser tolerance is the way forward.
 
-## Archival reference
+## Example
 
-- [FIRE settings](https://github.com/ColtonKawamura/SoftPack/wiki/FIRE-settings)
-- [Defaults and their reasons](https://github.com/ColtonKawamura/SoftPack/wiki/FIRE-settings#defaults-and-their-reasons)
+```julia
+using SoftPack
+
+packing = pack(
+    algorithm = FIRE(
+        delay = 20,             # downhill steps before growth
+        timestep_grow = 1.1,
+        mixing_coefficient = 0.25,
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+packing.converged
+```
+
+## References
+
+- **[Bitzek2006]** Erik Bitzek, Pekka Koskinen, Franz Gähler, Michael Moseler, Peter Gumbsch (2006). *Structural Relaxation Made Simple*. Physical Review Letters **97**, 170201. [doi:10.1103/physrevlett.97.170201](https://doi.org/10.1103/physrevlett.97.170201).
+- **[Guenole2020]** Julien Guénolé, Wolfram G. Nöhring, Aviral Vaid, Frédéric Houllé, Zhuocheng Xie, Aruna Prakash, Erik Bitzek (2020). *Assessment and optimization of the fast inertial relaxation engine (fire) for energy minimization in atomistic simulations and its implementation in lammps*. Computational Materials Science **175**, 109584. [doi:10.1016/j.commatsci.2020.109584](https://doi.org/10.1016/j.commatsci.2020.109584).

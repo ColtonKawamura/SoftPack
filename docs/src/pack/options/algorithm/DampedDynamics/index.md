@@ -2,7 +2,7 @@
 
 *Up:* [`algorithm`](index.md)
 
-Damped dynamics relaxes a packing with a physical trajectory (design §8). Every contact
+Damped dynamics relaxes a packing with a physical trajectory [Agnolin2007], [Samiei2013]. Every contact
 carries a dashpot, the box may also carry a Stokes drag, and the equations of motion are
 integrated with one of three integrators. The packing comes to rest when the dissipation
 has removed the energy, so the algorithm stops on a force or energy test like FIRE does,
@@ -34,10 +34,28 @@ $5\times10^5$ steps, while FIRE does in about $10^5$. Use a looser tolerance or
 
 ## Example
 
-```
-pack(algorithm = DampedDynamics(drag = StokesDrag(velocity = 1.0, during = :compression)))
+```julia
+using SoftPack
+
+packing = pack(
+    algorithm = DampedDynamics(
+        damping = ContactDamping(
+            normal = 0.98,
+            tangential = 0.98,
+        ),
+        drag = StokesDrag(
+            velocity = 1.0,
+            during = :compression,
+        ),
+        integrator = :centered_velocity_verlet,
+    ),
+    particles_count = 64,
+    seed = 1,
+)
+packing.converged
 ```
 
-## Archival reference
+## References
 
-- [Damped dynamics](https://github.com/ColtonKawamura/SoftPack/wiki/Damped-dynamics)
+- **[Agnolin2007]** Ivana Agnolin, Jean-Noël Roux (2007). *Internal states of model isotropic granular packings. I. Assembling process, geometry, and contact networks*. Physical Review E **76**, 061302. [doi:10.1103/physreve.76.061302](https://doi.org/10.1103/physreve.76.061302).
+- **[Samiei2013]** K. Samiei, B. Peters, M. Bolten, A. Frommer (2013). *Assessment of the potentials of implicit integration method in discrete element modelling of granular matter*. Computers & Chemical Engineering **49**, 183--193. [doi:10.1016/j.compchemeng.2012.10.009](https://doi.org/10.1016/j.compchemeng.2012.10.009).

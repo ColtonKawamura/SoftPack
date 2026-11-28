@@ -2,7 +2,7 @@
 
 *Up:* [Available options](index.md)
 
-The cap on the number of integration steps in one call. A run that reaches it stops with
+The cap on the number of integration steps in one call is a **SoftPack choice**. A run that reaches it stops with
 `stop_reason = :steps_max` and `converged = false`, and the packing it has reached is
 returned; `failure_action` decides whether that is a warning or an error.
 
@@ -22,7 +22,15 @@ cap.
 |:---|:---|
 | any integer | the maximum number of steps |
 
-## Archival reference
+## Example
 
-- [steps_max](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#steps_max)
-- [Step cap (steps_max)](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#step-cap-steps_max)
+```julia
+using SoftPack
+
+packing = pack(
+    steps_max = 10^7,  # cap per call
+    particles_count = 256,
+    seed = 1,
+)
+packing.steps
+```

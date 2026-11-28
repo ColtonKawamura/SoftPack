@@ -43,7 +43,22 @@ For now these sections are on the wiki.
 - [Uniform moments](https://github.com/ColtonKawamura/SoftPack/wiki/Particle-size-distribution-and-length-unit#uniform-moments)
 - [Changing the length unit](https://github.com/ColtonKawamura/SoftPack/wiki/Particle-size-distribution-and-length-unit#changing-the-length-unit)
 
+## Example
+
+```julia
+using SoftPack
+
+packing = pack(
+    particles_size_distribution = UniformPolydisperse(
+        diameter_mean = 1.0,  # mean diameter; sets the length unit
+        spread = 0.2,         # diameters in [0.8, 1.2]
+    ),
+    seed = 1,
+)
+packing.diameters
+```
+
 ## References
 
-- **[Shundyak2007]** Kostya Shundyak, Martin van Hecke, Wim van Saarloos (2007). *Force mobilization and generalized isostaticity in jammed packings of frictional grains*. Physical Review E **75**, 010301. [doi:10.1103/physreve.75.010301](https://doi.org/10.1103/physreve.75.010301).
 - **[Somfai2005]** Ellák Somfai, Jean-Noël Roux, Jacco H. Snoeijer, Martin van Hecke, Wim van Saarloos (2005). *Elastic wave propagation in confined granular systems*. Physical Review E **72**, 021301. [doi:10.1103/physreve.72.021301](https://doi.org/10.1103/physreve.72.021301).
+- **[Shundyak2007]** Kostya Shundyak, Martin van Hecke, Wim van Saarloos (2007). *Force mobilization and generalized isostaticity in jammed packings of frictional grains*. Physical Review E **75**, 010301. [doi:10.1103/physreve.75.010301](https://doi.org/10.1103/physreve.75.010301).

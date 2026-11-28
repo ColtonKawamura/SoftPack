@@ -2,7 +2,7 @@
 
 *Up:* [Available options](../index.md)
 
-Write the full run state to a file during the run, so a job that is killed can be
+Write the full run state to a file during the run [LAMMPSrestart], so a job that is killed can be
 continued from its last save instead of from the start. The file holds everything the
 restart needs: positions, velocities, rotations and spins, the contact history, the
 compression state, the FIRE counters, the settings and the provenance.
@@ -18,8 +18,21 @@ Nothing is saved by default; a restart file has to be asked for.
 | `nothing` | **default** |
 | [`RestartFile()`](RestartFile.md) |  |
 
-## Archival reference
+## Example
 
-- [restart_file = nothing](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#restart_file--nothing)
-- [restart_file = RestartFile(...)](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#restart_file--restartfile)
-- [No saves by default (restart_file)](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#no-saves-by-default-restart_file)
+```julia
+using SoftPack
+
+packing = pack(
+    restart_file = RestartFile(
+        "run.h5",
+        every = 25_000,
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+```
+
+## References
+
+- **[LAMMPSrestart]** LAMMPS developers. *LAMMPS documentation: restart command*. <https://docs.lammps.org/restart.html>. Accessed 2026-11-19.

@@ -2,7 +2,7 @@
 
 *Up:* [`DampedDynamics`](../index.md)
 
-The contact dashpots. A dashpot removes energy in proportion to the relative velocity at a
+The contact dashpots [Agnolin2007], [Santos2024]. A dashpot removes energy in proportion to the relative velocity at a
 contact; SoftPack offers three ways to set its coefficient, all of them written as a
 damping ratio or a rate so that a run keeps its meaning when the stiffness changes.
 
@@ -21,6 +21,25 @@ lets it act in both directions, which can help with a saddle but can also pair p
 that should separate. `coulomb_limit = :elastic` caps the tangential dashpot by the elastic
 normal force; the alternative `:total` is designed but not implemented.
 
-## Archival reference
+## Example
 
-- [Damping](https://github.com/ColtonKawamura/SoftPack/wiki/Damping)
+```julia
+using SoftPack
+
+packing = pack(
+    algorithm = DampedDynamics(
+        damping = ContactDamping(
+            normal = 0.98,
+            tangential = 0.98,
+        ),
+    ),
+    particles_count = 64,
+    seed = 1,
+)
+packing.converged
+```
+
+## References
+
+- **[Agnolin2007]** Ivana Agnolin, Jean-Noël Roux (2007). *Internal states of model isotropic granular packings. I. Assembling process, geometry, and contact networks*. Physical Review E **76**, 061302. [doi:10.1103/physreve.76.061302](https://doi.org/10.1103/physreve.76.061302).
+- **[Santos2024]** A. P. Santos, Ishan Srivastava, Leonardo E. Silbert, Jeremy B. Lechman, Gary S. Grest (2024). *Protocol-dependent frictional granular jamming simulations: cyclical, compression, and expansion*. Frontiers in Soft Matter **3**, 1326756. [doi:10.3389/frsfm.2023.1326756](https://doi.org/10.3389/frsfm.2023.1326756).

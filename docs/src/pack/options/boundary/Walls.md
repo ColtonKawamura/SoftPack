@@ -2,7 +2,7 @@
 
 *Up:* [`boundary`](index.md)
 
-Rigid walls on every side of the box (design §2). A particle that reaches a wall is
+Rigid walls on every side of the box [LAMMPSgran]. A particle that reaches a wall is
 pushed back by the same contact law, with the wall as an infinite-mass partner; the
 contact's branch vector is the distance from the particle's center to the wall, and its
 lever arm is the particle radius.
@@ -28,6 +28,21 @@ the design leaves that open for `Walls`.
 |:---|:---|:---|
 | `friction` | `true` | whether wall contacts carry the tangential model |
 
-## Archival reference
+## Example
 
-- [pack(boundary = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#packboundary--)
+```julia
+using SoftPack
+
+packing = pack(
+    boundary = Walls(
+        friction = false,  # normal wall contacts only
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+packing.packing_fraction
+```
+
+## References
+
+- **[LAMMPSgran]** LAMMPS developers. *LAMMPS documentation: pair_style gran/hooke, gran/hooke/history, gran/hertz/history*. <https://docs.lammps.org/pair_gran.html>. Accessed 2026-11-18.

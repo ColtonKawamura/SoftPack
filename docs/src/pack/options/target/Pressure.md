@@ -2,7 +2,7 @@
 
 *Up:* [`target`](index.md)
 
-Run the compression until the measured pressure reaches `pressure` (design §2). The
+Run the compression until the measured pressure reaches `pressure` [Agnolin2007]. The
 pressure of a configuration is
 
 $$P = \frac{1}{D V}\left(\sum_\text{pairs} f_n \, l + \sum_\text{walls} f_n \, h\right),$$
@@ -26,6 +26,8 @@ isostatic value used in `benchmarks/results.md`):
 | $10^{-4}$ | 0.8383 | 0.0325 |
 | $10^{-5}$ | 0.8380 | 0.0027 |
 
+## Why it is the default
+
 The default $P = 10^{-4}$ sits where the backbone is almost isostatic and the packing is
 still cheap to reach: the default run takes 0.7 s.
 
@@ -37,7 +39,19 @@ still cheap to reach: the default run takes 0.7 s.
 
 Both `Pressure()` and `Pressure(1e-3)` work.
 
-## Archival reference
+## Example
 
-- [Target pressure](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#target-pressure)
-- [Stress and pressure](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#stress-and-pressure)
+```julia
+using SoftPack
+
+packing = pack(
+    target = Pressure(1e-4),  # compress until the contact pressure is 1e-4
+    particles_count = 256,
+    seed = 1,
+)
+packing.pressure
+```
+
+## References
+
+- **[Agnolin2007]** Ivana Agnolin, Jean-Noël Roux (2007). *Internal states of model isotropic granular packings. I. Assembling process, geometry, and contact networks*. Physical Review E **76**, 061302. [doi:10.1103/physreve.76.061302](https://doi.org/10.1103/physreve.76.061302).

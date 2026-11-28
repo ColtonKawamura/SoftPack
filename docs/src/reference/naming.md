@@ -3,7 +3,7 @@
 *Up:* [SoftPack](../index.md)
 
 The interface follows one pattern, so a setting can be guessed instead of looked up
-(design §1).
+[JuliaStyle].
 
 - **Types are CamelCase.** A setting is a type, and its name says what it is:
   `Hookean`, `CundallStrack`, `DampedDynamics`, `RestartFile`.
@@ -25,7 +25,6 @@ The interface follows one pattern, so a setting can be guessed instead of looked
 The rules are enforced by review, not by the compiler; a new setting that breaks them
 should be renamed before it is merged.
 
-## Archival reference
+## References
 
-- [Interface and naming](https://github.com/ColtonKawamura/SoftPack/wiki/Interface-and-naming)
-- [design document §1](https://github.com/ColtonKawamura/SoftPack/blob/main/docs/design-references.md#1-interface-and-naming)
+- **[JuliaStyle]** The Julia Project. *Style Guide, The Julia Language manual*. <https://docs.julialang.org/en/v1/manual/style-guide/>. Accessed 2026-11-18.

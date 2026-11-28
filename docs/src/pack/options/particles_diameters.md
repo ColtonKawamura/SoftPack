@@ -41,3 +41,15 @@ For now these sections are on the wiki.
 
 - [Given diameter list](https://github.com/ColtonKawamura/SoftPack/wiki/Particle-size-distribution-and-length-unit#given-diameter-list)
 - [Given diameters](https://github.com/ColtonKawamura/SoftPack/wiki/Particle-size-distribution-and-length-unit#given-diameters)
+
+## Example
+
+```julia
+using SoftPack
+
+packing = pack(
+    particles_diameters = [1.0, 1.4, 1.0, 1.4],  # one diameter per particle
+    seed = 1,
+)
+packing.diameters
+```

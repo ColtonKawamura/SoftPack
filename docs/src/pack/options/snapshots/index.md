@@ -7,7 +7,7 @@ can be inspected or redrawn later. A snapshot is data, not a picture: it holds t
 positions, and any frame can be rendered at any size afterwards with `render_frame!`.
 
 Snapshots live in memory during the run and are written by `write_packing` into the
-`snapshots` group of the HDF5 file. Nothing is stored by default.
+`snapshots` group of the HDF5 file. Nothing is stored by default (**SoftPack choice**).
 
 **Default:** `nothing`
 
@@ -18,7 +18,17 @@ Snapshots live in memory during the run and are written by `write_packing` into 
 | `nothing` | **default** |
 | [`Snapshots()`](Snapshots.md) |  |
 
-## Archival reference
+## Example
 
-- [pack(snapshots = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#packsnapshots--)
-- [Snapshots and movie](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#snapshots-and-movie)
+```julia
+using SoftPack
+
+packing = pack(
+    snapshots = Snapshots(
+        every = 10_000,
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+write_packing("packing.h5", packing)
+```

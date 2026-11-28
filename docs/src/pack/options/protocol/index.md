@@ -2,7 +2,7 @@
 
 *Up:* [Available options](../index.md)
 
-How the box is brought to the target. The protocol changes the box, then lets the
+How the box is brought to the target [Agnolin2007]. The protocol changes the box, then lets the
 algorithm restore force balance, then asks whether the pressure is where it should be; the
 answer decides whether the next step grows, shrinks or stays.
 
@@ -14,8 +14,21 @@ answer decides whether the next step grows, shrinks or stays.
 |:---|:---|
 | [`IsotropicCompression()`](IsotropicCompression.md) | **default** |
 
-## Archival reference
+## Example
 
-- [pack(protocol = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#packprotocol--)
-- [Isotropic compression](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#isotropic-compression)
-- [Compression of the default packing](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#compression-of-the-default-packing)
+```julia
+using SoftPack
+
+packing = pack(
+    protocol = IsotropicCompression(
+        strain_step = 5e-3,
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+packing.strain_step_final
+```
+
+## References
+
+- **[Agnolin2007]** Ivana Agnolin, Jean-Noël Roux (2007). *Internal states of model isotropic granular packings. I. Assembling process, geometry, and contact networks*. Physical Review E **76**, 061302. [doi:10.1103/physreve.76.061302](https://doi.org/10.1103/physreve.76.061302).

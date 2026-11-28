@@ -2,7 +2,7 @@
 
 *Up:* [`write_packing()`](index.md)
 
-Whether an existing file may be replaced.
+Whether an existing file may be replaced. The default is a **SoftPack choice**.
 
 | Choice | Default | Behaviour |
 |:---|:---|:---|
@@ -18,8 +18,15 @@ renamed over the target, so a job killed during a write leaves the previous file
 with `overwrite = true` that means an interrupted write never leaves a half-written
 packing in place of a good one.
 
-## Archival reference
+## Example
 
-- [write_packing(overwrite = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#write_packingoverwrite--)
-- [Overwrite (overwrite)](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#overwrite-overwrite)
-- [Safe writes](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#safe-writes)
+```julia
+using SoftPack
+
+packing = pack(particles_count = 64, seed = 1)
+write_packing(
+    "packing.h5",
+    packing;
+    overwrite = true,
+)
+```

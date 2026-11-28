@@ -2,12 +2,8 @@
 
 *Up:* [`movie`](index.md)
 
-```
-pack(movie = Movie("packing.mp4"; every = 500, size = 720, fps = 30))
-```
-
-Render a frame every `every` steps into a temporary directory and encode the frames into
-`path` when the run ends (design §11). `every` can also be a wall-clock period. The frame
+Recording is a **SoftPack choice**. Render a frame every `every` steps into a temporary directory and encode the frames into
+`path` when the run ends. `every` can also be a wall-clock period. The frame
 is `size` pixels square; `fps` is the frame rate of the encoded movie.
 
 The renderer is the one of [`render_frame!`](../../../reference/rendering.md): disks or
@@ -32,7 +28,19 @@ kept.
 | `size` | `640` | the image width in pixels |
 | `fps` | `25` | frames per second of the movie |
 
-## Archival reference
+## Example
 
-- [pack(movie = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#packmovie--)
-- [Snapshots and movie](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#snapshots-and-movie)
+```julia
+using SoftPack
+
+packing = pack(
+    movie = Movie(
+        "packing.mp4",
+        every = 500,
+        size = 720,
+        fps = 30,
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+```

@@ -2,7 +2,7 @@
 
 *Up:* [`drag`](index.md)
 
-A drag force and torque proportional to the velocity and the spin (design §8):
+A drag force and torque proportional to the velocity and the spin (**SoftPack choice**):
 
 $$F_\text{drag} = -a_v M \, v, \qquad \tau_\text{drag} = -a_s I \, \omega,$$
 
@@ -27,11 +27,19 @@ why the benchmark runs use `:always` for a tight tolerance.
 
 ## Example
 
-```
-pack(algorithm = DampedDynamics(drag = StokesDrag(velocity = 1.0, spin = 0.5,
-                                                  during = :always)))
-```
+```julia
+using SoftPack
 
-## Archival reference
-
-- [Stokes drag](https://github.com/ColtonKawamura/SoftPack/wiki/Damping#stokes-drag)
+packing = pack(
+    algorithm = DampedDynamics(
+        drag = StokesDrag(
+            velocity = 1.0,  # rate on the translational velocity
+            spin = 0.5,      # rate on the spin
+            during = :always,
+        ),
+    ),
+    particles_count = 64,
+    seed = 1,
+)
+packing.converged
+```

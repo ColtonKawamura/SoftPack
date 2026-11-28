@@ -5,11 +5,6 @@
 A `PackParams` is one set of settings, built from the same keywords `pack()` takes. It
 exists so a set of settings can be built once, inspected, reused, and passed to `pack`:
 
-```
-params = PackParams(dimension = 3, particles_count = 512, seed = 7)
-packing = pack(params)
-```
-
 `pack(params)` validates the settings and runs exactly like `pack(; kwargs...)` with the
 same keywords. The result's `packing.settings` is the `PackParams` of the run, and a
 restart compares its stored copy with the new keywords.
@@ -45,6 +40,16 @@ invalid setting raises an error at the call rather than after a minute of packin
 | `snapshots` | `nothing` | store positions at intervals |
 | `movie` | `nothing` | render a movie |
 
-## Archival reference
+## Example
 
-- [3. Re-use a set of settings](https://github.com/ColtonKawamura/SoftPack/wiki/Interface-and-naming#3-reuse-a-set-of-settings)
+```julia
+using SoftPack
+
+params = PackParams(
+    dimension = 3,
+    particles_count = 512,
+    seed = 7,
+)
+packing = pack(params)
+packing.packing_fraction
+```

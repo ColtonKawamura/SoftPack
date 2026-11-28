@@ -41,7 +41,7 @@ SoftPack.render_packing("packing.ppm", packing, markers = false)
 
 ## Movies
 
-```
+```julia
 pack(movie = Movie("packing.mp4"; every = 500, size = 720, fps = 30))
 ```
 

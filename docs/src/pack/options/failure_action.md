@@ -2,7 +2,7 @@
 
 *Up:* [Available options](index.md)
 
-What a run does when it stops without converging.
+What a run does when it stops without converging. The default is a **SoftPack choice**.
 
 | Choice | Default | Behaviour |
 |:---|:---|:---|
@@ -25,8 +25,14 @@ ensemble silently.
 | `:warn` | **default** |
 | `:error` |  |
 
-## Archival reference
+## Example
 
-- [failure_action = :warn](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#failure_action--warn)
-- [failure_action = :error](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#failure_action--error)
-- [Warn and return (failure_action)](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#warn-and-return-failure_action)
+```julia
+using SoftPack
+
+packing = pack(
+    failure_action = :error,  # throw PackingError instead of warning
+    particles_count = 256,
+    seed = 1,
+)
+```

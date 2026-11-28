@@ -2,7 +2,7 @@
 
 *Up:* [`mass`](index.md)
 
-The mass follows from a material density and the particle's size (design §4):
+The mass follows from a material density and the particle's size [LAMMPSset]:
 
 $$m_i = \rho \frac{\pi d_i^2}{4} \quad \text{(2D)}, \qquad m_i = \rho \frac{\pi d_i^3}{6} \quad \text{(3D)}.$$
 
@@ -26,7 +26,21 @@ Both `Density()` and `Density(density = 2.0)` work.
 There is no `shape` keyword: the particle shape follows the dimension, disks in 2D and
 spheres in 3D. Other shapes are on the [Roadmap](../../../roadmap.md).
 
-## Archival reference
+## Example
 
-- [Density(…)](https://github.com/ColtonKawamura/SoftPack/wiki/Mass#density)
-- [Density masses](https://github.com/ColtonKawamura/SoftPack/wiki/Mass#density-masses)
+```julia
+using SoftPack
+
+packing = pack(
+    mass = Density(
+        density = 1.0,  # m_i = rho pi d_i^2/4 in 2D
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+packing.masses
+```
+
+## References
+
+- **[LAMMPSset]** LAMMPS developers. *LAMMPS documentation: set command*. <https://docs.lammps.org/set.html>. Accessed 2026-11-18.

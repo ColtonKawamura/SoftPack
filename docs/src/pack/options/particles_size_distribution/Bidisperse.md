@@ -53,6 +53,22 @@ For now these sections are on the wiki.
 - [Bidisperse default](https://github.com/ColtonKawamura/SoftPack/wiki/Particle-size-distribution-and-length-unit#bidisperse-default)
 - [Worked numbers](https://github.com/ColtonKawamura/SoftPack/wiki/Particle-size-distribution-and-length-unit#worked-numbers)
 
+## Example
+
+```julia
+using SoftPack
+
+packing = pack(
+    particles_size_distribution = Bidisperse(
+        diameter_small = 1.0,  # small diameter; sets the length unit
+        diameter_ratio = 1.4,  # large diameter divided by small
+        fraction_small = 0.5,  # half the particles are small
+    ),
+    seed = 1,
+)
+packing.diameters
+```
+
 ## References
 
 - **[OHern2003]** Corey S. O’Hern, Leonardo E. Silbert, Andrea J. Liu, Sidney R. Nagel (2003). *Jamming at zero temperature and zero applied stress: The epitome of disorder*. Physical Review E **68**, 011306. [doi:10.1103/physreve.68.011306](https://doi.org/10.1103/physreve.68.011306).

@@ -2,7 +2,7 @@
 
 *Up:* [`friction`](index.md)
 
-A linear tangential spring with a Coulomb cap (design §13). The tangential force is
+A linear tangential spring with a Coulomb cap [Somfai2005], [Silbert2001]. The tangential force is
 
 $$f_t = -k_t \xi,$$
 
@@ -31,11 +31,21 @@ damped dynamics alike.
 
 ## Example
 
-```
-pack(friction = CundallStrack(friction_coefficient = 0.3))
+```julia
+using SoftPack
+
+packing = pack(
+    friction = CundallStrack(
+        friction_coefficient = 0.3,  # mu in the Coulomb cap
+        stiffness_ratio = :matched,  # k_t/k_n = 1/3 in 2D
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+packing.contact_number
 ```
 
-## Archival reference
+## References
 
-- [CundallStrack(friction_coefficient = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Friction-models#cundallstrackfriction_coefficient--)
-- [CundallStrack](https://github.com/ColtonKawamura/SoftPack/wiki/Friction-models#cundallstrack)
+- **[Somfai2005]** Ellák Somfai, Jean-Noël Roux, Jacco H. Snoeijer, Martin van Hecke, Wim van Saarloos (2005). *Elastic wave propagation in confined granular systems*. Physical Review E **72**, 021301. [doi:10.1103/physreve.72.021301](https://doi.org/10.1103/physreve.72.021301).
+- **[Silbert2001]** Leonardo E. Silbert, Deniz Ertaş, Gary S. Grest, Thomas C. Halsey, Dov Levine, Steven J. Plimpton (2001). *Granular flow down an inclined plane: Bagnold scaling and rheology*. Physical Review E **64**, 051302. [doi:10.1103/physreve.64.051302](https://doi.org/10.1103/physreve.64.051302).

@@ -2,7 +2,7 @@
 
 *Up:* [`DampedDynamics`](../index.md)
 
-How the equations of motion are stepped. The three integrators differ in when they
+How the equations of motion are stepped [Samiei2013], [CodeAster]. The three integrators differ in when they
 evaluate the damping: the centered velocity Verlet solves the damping implicitly and is the
 most robust; the lagged velocity Verlet uses the previous step's relative velocities and is
 explicit; the semi-implicit Euler is the simplest explicit scheme.
@@ -23,6 +23,22 @@ introduce a lag in the damping. It costs a sparse Cholesky solve of
 $M + \tfrac{\Delta t}{2}\Gamma$ every step; with $N = 256$ that is cheaper than the extra
 steps the explicit forms need.
 
-## Archival reference
+## Example
 
-- [Integrators](https://github.com/ColtonKawamura/SoftPack/wiki/Damped-dynamics#integrators)
+```julia
+using SoftPack
+
+packing = pack(
+    algorithm = DampedDynamics(
+        integrator = :centered_velocity_verlet,
+    ),
+    particles_count = 64,
+    seed = 1,
+)
+packing.converged
+```
+
+## References
+
+- **[Samiei2013]** K. Samiei, B. Peters, M. Bolten, A. Frommer (2013). *Assessment of the potentials of implicit integration method in discrete element modelling of granular matter*. Computers & Chemical Engineering **49**, 183--193. [doi:10.1016/j.compchemeng.2012.10.009](https://doi.org/10.1016/j.compchemeng.2012.10.009).
+- **[CodeAster]** Code_Aster developers. *Algorithmes d'intégration directe de l'opérateur DYNA_VIBRA / BASE_CALCUL='PHYS', manual R5.05.02*. <https://code-aster.org/doc/v16/man_r/r5/r5.05.02.pdf>. Section 6.2, central differences. Accessed 2026-11-24.

@@ -2,8 +2,8 @@
 
 *Up:* [`convergence`](index.md)
 
-The test used by the Leiden group (design §5): every particle's acceleration must be
-below a tolerance in reduced units,
+The test used by the Leiden group [Somfai2005], [Shundyak2007]: every particle's
+acceleration must be below a tolerance in reduced units,
 
 $$\max_i |a_i| < \varepsilon \, \frac{k \, d_\text{ref}}{m_\text{ref}},$$
 
@@ -20,6 +20,22 @@ pressure band is asked separately, as for every test.
 |:---|:---|:---|
 | `tolerance` | `1e-10` | $\varepsilon$, relative to the contact acceleration |
 
-## Archival reference
+## Example
 
-- [LeidenAcceleration(tolerance = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Convergence-criterion#leidenaccelerationtolerance--)
+```julia
+using SoftPack
+
+packing = pack(
+    convergence = LeidenAcceleration(
+        tolerance = 1e-10,  # acceleration in reduced units
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+packing.converged
+```
+
+## References
+
+- **[Somfai2005]** Ellák Somfai, Jean-Noël Roux, Jacco H. Snoeijer, Martin van Hecke, Wim van Saarloos (2005). *Elastic wave propagation in confined granular systems*. Physical Review E **72**, 021301. [doi:10.1103/physreve.72.021301](https://doi.org/10.1103/physreve.72.021301).
+- **[Shundyak2007]** Kostya Shundyak, Martin van Hecke, Wim van Saarloos (2007). *Force mobilization and generalized isostaticity in jammed packings of frictional grains*. Physical Review E **75**, 010301. [doi:10.1103/physreve.75.010301](https://doi.org/10.1103/physreve.75.010301).

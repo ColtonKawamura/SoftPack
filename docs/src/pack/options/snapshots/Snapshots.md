@@ -2,12 +2,7 @@
 
 *Up:* [`snapshots`](index.md)
 
-```
-p = pack(snapshots = Snapshots(every = 5000))
-write_packing("packing.h5", p)
-```
-
-Take a snapshot every `every` steps (or every wall-clock period). The file then holds a
+Snapshots are a **SoftPack choice**. Take a snapshot every `every` steps (or every wall-clock period). The file then holds a
 `snapshots/positions` dataset with one column per snapshot, so the $k$-th frame is
 `snapshots/positions[:, k]`.
 
@@ -21,7 +16,17 @@ intermediate states matter for analysis but a movie does not.
 |:---|:---|:---|
 | `every` | required | steps (an integer) or a wall-clock period between snapshots |
 
-## Archival reference
+## Example
 
-- [pack(snapshots = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#packsnapshots--)
-- [Snapshots and movie](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#snapshots-and-movie)
+```julia
+using SoftPack
+
+packing = pack(
+    snapshots = Snapshots(
+        every = 5_000,
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+write_packing("packing.h5", packing)
+```

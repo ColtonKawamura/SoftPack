@@ -2,11 +2,7 @@
 
 *Up:* [`restart_file`](index.md)
 
-```
-pack(restart_file = RestartFile("run.h5"; every = 10_000))
-```
-
-Write the run state to `path` every `every` steps (design §6). `every` can also be a
+Write the run state to `path` every `every` steps [LAMMPSrestart]. `every` can also be a
 `Dates` period, in which case the save happens on wall-clock time.
 
 The write is atomic: the state goes to a temporary file in the same directory and is
@@ -26,7 +22,21 @@ written.
 | `path` | required | where to write the state |
 | `every` | required | steps (an integer) or a wall-clock period between saves |
 
-## Archival reference
+## Example
 
-- [restart_file = RestartFile(...)](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#restart_file--restartfile)
-- [Save during the run (restart_file = RestartFile(...))](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#save-during-the-run-restart_file--restartfile)
+```julia
+using SoftPack
+
+packing = pack(
+    restart_file = RestartFile(
+        "run.h5",
+        every = 10_000,
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+```
+
+## References
+
+- **[LAMMPSrestart]** LAMMPS developers. *LAMMPS documentation: restart command*. <https://docs.lammps.org/restart.html>. Accessed 2026-11-19.

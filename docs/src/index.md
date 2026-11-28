@@ -12,6 +12,10 @@ SoftPack has two functions you call. Each page opens with every default written 
 - [`pack()`](pack/index.md): create a packing. It starts from the call with every default, then lists every option, then each option's choices, then each choice's own settings.
 - [`write_packing()`](write_packing/index.md): save a packing to disk. It starts from the call with every default, then each option.
 
+## Benchmarks
+
+- [Benchmarks](benchmarks/index.md): how SoftPack compares with the jamming and friction literature, with figures, tables and a packing movie.
+
 ## Reference
 
 - [Naming rules](reference/naming.md): how keywords and types are named.

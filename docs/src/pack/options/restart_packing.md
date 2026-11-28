@@ -2,12 +2,7 @@
 
 *Up:* [Available options](index.md)
 
-Continue a run from a file written by `write_packing` or by a `RestartFile`:
-
-```
-pack(restart_packing = "run.h5")
-```
-
+Continue a run from a file written by `write_packing` or by a `RestartFile` [LAMMPSreadrestart]:
 The stored state is loaded and the run continues from it: the compression state, the FIRE
 counters, the contact history and the settings all come back, so the continuation is the
 same run, not a new one. A restart redoes the compression trial that was in progress from
@@ -17,7 +12,7 @@ an interrupted run resumes exactly where it stopped.
 Only run-control settings may differ from the stored ones: `steps_max`, `failure_action`,
 `convergence`, `restart_file`, `snapshots`, `movie` and `pressure_tolerance`. Any other
 keyword raises an error even when it equals the stored value, because passing it says you
-expect it to do something (card T-s3tz). An omitted `steps_max` starts a fresh budget
+expect it to do something. An omitted `steps_max` starts a fresh budget
 counted from the restart, and a recording schedule counts `every` from the step the job
 resumed at.
 
@@ -33,8 +28,18 @@ $10^{-8}$ without paying for the first part twice.
 | `nothing` | **default** |
 | `path to a file` |  |
 
-## Archival reference
+## Example
 
-- [restart_packing = nothing](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#restart_packing--nothing)
-- [restart_packing = path](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#restart_packing--path)
-- [No restart by default (restart_packing)](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#no-restart-by-default-restart_packing)
+```julia
+using SoftPack
+
+packing = pack(
+    restart_packing = "run.h5",
+    steps_max = 10^7,
+)
+packing.converged
+```
+
+## References
+
+- **[LAMMPSreadrestart]** LAMMPS developers. *LAMMPS documentation: read_restart command*. <https://docs.lammps.org/read_restart.html>. Accessed 2026-11-19.

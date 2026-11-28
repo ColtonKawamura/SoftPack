@@ -30,9 +30,3 @@ For a physical mapping, choose three numbers and derive the rest: for disks of 1
 $k = 100\ \text{N/m}$ and $m = 1\ \text{g}$, the time unit is
 $\sqrt{10^{-3}/100}\ \text{s} \approx 3\ \text{ms}$ and the 2D pressure unit is
 $k/d = 10^5\ \text{N/m}$; the same numbers for spheres give $10^5\ \text{Pa}$.
-
-## Archival reference
-
-- [Units](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#units)
-- [Changing the length unit](https://github.com/ColtonKawamura/SoftPack/wiki/Particle-size-distribution-and-length-unit#changing-the-length-unit)
-- [Time unit and contact time scales](https://github.com/ColtonKawamura/SoftPack/wiki/Mass#time-unit-and-contact-time-scales)

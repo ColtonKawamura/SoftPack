@@ -29,6 +29,22 @@ For now these sections are on the wiki.
 - [Monodisperse law](https://github.com/ColtonKawamura/SoftPack/wiki/Particle-size-distribution-and-length-unit#monodisperse-law)
 - [Monodisperse](https://github.com/ColtonKawamura/SoftPack/wiki/Particle-size-distribution-and-length-unit#monodisperse)
 
+## Example
+
+```julia
+using SoftPack
+
+packing = pack(
+    dimension = 3,  # monodisperse disks crystallize in 2D
+    particles_count = 512,
+    particles_size_distribution = Monodisperse(
+        diameter = 1.0,  # every particle has this diameter
+    ),
+    seed = 1,
+)
+packing.packing_fraction
+```
+
 ## References
 
 - **[OHern2003]** Corey S. O’Hern, Leonardo E. Silbert, Andrea J. Liu, Sidney R. Nagel (2003). *Jamming at zero temperature and zero applied stress: The epitome of disorder*. Physical Review E **68**, 011306. [doi:10.1103/physreve.68.011306](https://doi.org/10.1103/physreve.68.011306).

@@ -56,8 +56,14 @@ them.
 | `run_state(p)` | a `RunState` of the final state, for a user test or rule |
 | `find_rattlers(p, rule)` | a `BitVector`, what another rule would say |
 
-## Archival reference
+## Example
 
-- [The returned packing and the file](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#the-returned-packing-and-the-file)
-- [What a file holds](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#what-a-file-holds)
-- [Run outcomes](https://github.com/ColtonKawamura/SoftPack/wiki/A-packing-that-does-not-converge#run-outcomes)
+```julia
+using SoftPack
+
+packing = pack(
+    particles_count = 256,
+    seed = 1,
+)
+(packing.packing_fraction, packing.contact_number)
+```

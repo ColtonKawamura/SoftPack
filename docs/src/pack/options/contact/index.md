@@ -5,7 +5,7 @@
 The contact law is the normal force between two particles that overlap. SoftPack's
 particles are soft: an overlap $\delta = d_{ij} - r_{ij}$ (the sum of the radii minus the
 center distance) stores an elastic energy, and the force pushes the particles apart. The
-law acts only in compression; there is no attraction.
+law acts only in compression; there is no attraction [OHern2003].
 
 With friction off, the normal force is the whole contact. With friction on, the law fixes
 the normal stiffness that the tangential model scales from, so the two settings are
@@ -26,8 +26,21 @@ time step of the run; it does not change the jamming packing fraction.
 | [`Hookean()`](Hookean.md) | **default** | $f = k\delta$ |
 | [`Hertzian()`](Hertzian.md) |  | $f = k\delta^{3/2}$ |
 
-## Archival reference
+## Example
 
-- [pack(contact = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#packcontact--)
-- [Hookean contacts](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#hookean-contacts)
-- [Hertzian contacts](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#hertzian-contacts)
+```julia
+using SoftPack
+
+packing = pack(
+    contact = Hertzian(
+        stiffness = 1.0,
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+packing.packing_fraction
+```
+
+## References
+
+- **[OHern2003]** Corey S. O’Hern, Leonardo E. Silbert, Andrea J. Liu, Sidney R. Nagel (2003). *Jamming at zero temperature and zero applied stress: The epitome of disorder*. Physical Review E **68**, 011306. [doi:10.1103/physreve.68.011306](https://doi.org/10.1103/physreve.68.011306).

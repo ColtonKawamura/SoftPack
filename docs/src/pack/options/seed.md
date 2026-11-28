@@ -2,15 +2,14 @@
 
 *Up:* [Available options](index.md)
 
-The seed of the random number generator. SoftPack draws the initial placement from one
+The seed of the random number generator [StableRNGs], [JuliaRandom]. SoftPack draws the initial placement from one
 `StableRNG` stream, and nothing else in the run is random: the compression is
 deterministic once the start is fixed. The same seed therefore gives the same packing to
 the last bit, on Julia 1.10, 1.12 and 1.13, because every reduction in the trajectory runs
-in a fixed order (design §10).
+in a fixed order.
 
 A seed must lie between 0 and `typemax(Int)`; anything outside raises an error rather
-than wrapping, because a silent modulo would map two seeds to the same packing (card
-T-73sy). Use a different seed to get an independent member of the ensemble; use the same
+than wrapping, because a silent modulo would map two seeds to the same packing. Use a different seed to get an independent member of the ensemble; use the same
 seed to reproduce a run or to compare two settings on the same start.
 
 **Default:** `1`
@@ -23,7 +22,19 @@ seed to reproduce a run or to compare two settings on the same start.
 
 The result records the seed and the generator, so a packing file says how to reproduce it.
 
-## Archival reference
+## Example
 
-- [pack(seed = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#packseed--)
-- [Reproducibility](https://github.com/ColtonKawamura/SoftPack/wiki/Reproducibility)
+```julia
+using SoftPack
+
+packing = pack(
+    seed = 7,  # independent member of the ensemble
+    particles_count = 256,
+)
+packing.packing_fraction
+```
+
+## References
+
+- **[StableRNGs]** JuliaRandom. *StableRNGs.jl*. <https://github.com/JuliaRandom/StableRNGs.jl>. Accessed 2026-11-18.
+- **[JuliaRandom]** The Julia Project. *Random Numbers, The Julia Language manual (Reproducibility section)*. <https://docs.julialang.org/en/v1/stdlib/Random/>. Accessed 2026-11-18.

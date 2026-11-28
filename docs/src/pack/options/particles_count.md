@@ -3,7 +3,7 @@
 *Up:* [Available options](index.md)
 
 How many particles the packing has. More particles mean smaller finite-size scatter and a
-packing fraction closer to the thermodynamic limit, at a cost that grows faster than
+packing fraction closer to the thermodynamic limit [OHern2003], at a cost that grows faster than
 linearly: the default 2D run takes 0.7 s at 256 particles, 7.5 s at 1024 and 112.6 s at
 4096.
 
@@ -34,6 +34,18 @@ The packing fraction rises with $N$ because the small systems keep a larger frac
 their particles at the surface of the fluctuation; the rise is 0.0023 from 256 to 1024 and
 0.0005 from 1024 to 4096, so quote the largest $N$ or an ensemble.
 
-## Archival reference
+## Example
 
-- [pack(particles_count = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Default-packing#packparticles_count--)
+```julia
+using SoftPack
+
+packing = pack(
+    particles_count = 1024,  # four times the default
+    seed = 1,
+)
+packing.packing_fraction
+```
+
+## References
+
+- **[OHern2003]** Corey S. O’Hern, Leonardo E. Silbert, Andrea J. Liu, Sidney R. Nagel (2003). *Jamming at zero temperature and zero applied stress: The epitome of disorder*. Physical Review E **68**, 011306. [doi:10.1103/physreve.68.011306](https://doi.org/10.1103/physreve.68.011306).

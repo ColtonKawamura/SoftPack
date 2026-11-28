@@ -5,10 +5,6 @@
 `rattlers` also accepts a function. It is called with the finished `Packing` and must
 return one value per particle, truthy for a rattler:
 
-```
-pack(rattlers = packing -> packing.forces[1, :] .== 0)
-```
-
 A `BitVector` or a `Vector{Bool}` of length `N` is the natural return; anything that
 `BitVector(...)` accepts works. The function sees the packing's `contacts` table,
 `positions`, `forces`, `diameters`, `masses`, `box_side`, `settings` and the rest of the
@@ -18,6 +14,15 @@ The function is applied once, as you wrote it: it is your job to repeat or casca
 rule needs it. To test a rule on a finished packing without repacking, use
 [`find_rattlers(packing, rule)`](find_rattlers.md).
 
-## Archival reference
+## Example
 
-- [No removal and custom rules](https://github.com/ColtonKawamura/SoftPack/wiki/Rattler-rules#no-removal-and-custom-rules)
+```julia
+using SoftPack
+
+packing = pack(
+    rattlers = p -> p.forces[1, :] .== 0,  # x force per particle
+    particles_count = 256,
+    seed = 1,
+)
+count(packing.rattlers)
+```

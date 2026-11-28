@@ -2,7 +2,7 @@
 
 *Up:* [`write_packing()`](index.md)
 
-Compress the HDF5 datasets to make the file smaller (design §11). Nothing is compressed by
+Compress the HDF5 datasets to make the file smaller [HDF5jl], [h5py]. Nothing is compressed by
 default, so the datasets stay memory-mappable and a reader can open a large file without
 decompressing all of it.
 
@@ -19,8 +19,20 @@ cannot be memory-mapped.
 `compression` applies to HDF5 only. With `format = :csv` it is ignored, because the CSV
 path writes text.
 
-## Archival reference
+## Example
 
-- [write_packing(compression = …)](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#write_packingcompression--)
-- [Compression (compression)](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#compression-compression)
-- [gzip compression](https://github.com/ColtonKawamura/SoftPack/wiki/Outputs#gzip-compression)
+```julia
+using SoftPack
+
+packing = pack(particles_count = 64, seed = 1)
+write_packing(
+    "packing.h5",
+    packing;
+    compression = :gzip,
+)
+```
+
+## References
+
+- **[HDF5jl]** JuliaIO. *HDF5.jl documentation*. <https://juliaio.github.io/HDF5.jl/stable/>. Accessed 2026-11-18.
+- **[h5py]** The h5py developers. *Datasets, h5py documentation*. <https://docs.h5py.org/en/stable/high/dataset.html>. Accessed 2026-11-18.

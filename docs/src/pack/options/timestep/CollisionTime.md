@@ -2,8 +2,8 @@
 
 *Up:* [`timestep`](index.md)
 
-The starting step is a fraction of the elastic contact time of the lightest pair (design
-§12). For a linear contact law the time of a half oscillation is
+The starting step is a fraction of the elastic contact time of the lightest pair
+[Silbert2001], [OSullivan2004]. For a linear contact law the time of a half oscillation is
 $\pi\sqrt{M/k}$, so
 
 $$\Delta t_0 = \text{fraction} \times \pi \sqrt{\frac{M}{k}},$$
@@ -20,6 +20,8 @@ $$\Delta t_0 = \text{fraction} \times \pi \mathrm{min}\left(\sqrt{\frac{M_n}{k_n
 where the tangential mass $M_t = M_n/(1 + 1/\kappa)$ includes the particle's rotation
 ($\kappa = 1/2$ for a disk, $2/5$ for a sphere).
 
+## Why it is the default
+
 The default fraction is $1/50$, a twentieth of the collision time, which is a safe step for
 FIRE's semi-implicit Euler and for the lagged integrators.
 
@@ -31,15 +33,27 @@ FIRE's semi-implicit Euler and for the lagged integrators.
 
 ## A fixed step instead
 
-```
-pack(timestep = 0.02)
-```
-
 A number is read in units of $\tau = \sqrt{m_{\mathrm{min}}/k}$, the elastic time of the lightest
-particle (card T-d66w), so the same number is the same physical step whatever the mass
+particle, so the same number is the same physical step whatever the mass
 distribution; with the default stiffness and equal masses, a fixed 0.02 corresponds to
 `CollisionTime(fraction = f)` with $f = 0.02\sqrt{2}/\pi \approx 0.0090$.
 
-## Archival reference
+## Example
 
-- [Time step](https://github.com/ColtonKawamura/SoftPack/wiki/Time-step)
+```julia
+using SoftPack
+
+packing = pack(
+    timestep = CollisionTime(
+        fraction = 1/50,  # Delta t = t_col / 50
+    ),
+    particles_count = 256,
+    seed = 1,
+)
+packing.timestep_start
+```
+
+## References
+
+- **[Silbert2001]** Leonardo E. Silbert, Deniz Ertaş, Gary S. Grest, Thomas C. Halsey, Dov Levine, Steven J. Plimpton (2001). *Granular flow down an inclined plane: Bagnold scaling and rheology*. Physical Review E **64**, 051302. [doi:10.1103/physreve.64.051302](https://doi.org/10.1103/physreve.64.051302).
+- **[OSullivan2004]** Catherine O'Sullivan, Jonathan D. Bray (2004). *Selecting a suitable time step for discrete element simulations that use the central difference time integration scheme*. Engineering Computations **21**, 278--303. [doi:10.1108/02644400410519794](https://doi.org/10.1108/02644400410519794).

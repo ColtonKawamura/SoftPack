@@ -2,7 +2,7 @@
 
 *Up:* [`damping`](index.md)
 
-The dashpot coefficient follows the contact time (design §8):
+The dashpot coefficient follows the contact time [Agnolin2007], [Gilabert2007]:
 
 $$\gamma_n = 2 \zeta_n \sqrt{k_n M_n}, \qquad \gamma_t = 2 \zeta_t \sqrt{k_t M_t},$$
 
@@ -30,6 +30,25 @@ force is on the Coulomb cap, so a tangential velocity cannot do work against it.
 | `attractive` | `false` | whether the dashpot can pull |
 | `coulomb_limit` | `:elastic` | which normal force caps the tangential dashpot |
 
-## Archival reference
+## Example
 
-- [Contact damping](https://github.com/ColtonKawamura/SoftPack/wiki/Damping#contact-damping)
+```julia
+using SoftPack
+
+packing = pack(
+    algorithm = DampedDynamics(
+        damping = ContactDamping(
+            normal = 0.98,      # zeta_n
+            tangential = 0.98,  # zeta_t
+        ),
+    ),
+    particles_count = 64,
+    seed = 1,
+)
+packing.converged
+```
+
+## References
+
+- **[Agnolin2007]** Ivana Agnolin, Jean-Noël Roux (2007). *Internal states of model isotropic granular packings. I. Assembling process, geometry, and contact networks*. Physical Review E **76**, 061302. [doi:10.1103/physreve.76.061302](https://doi.org/10.1103/physreve.76.061302).
+- **[Gilabert2007]** F. A. Gilabert, J.-N. Roux, A. Castellanos (2007). *Computer simulation of model cohesive powders: Influence of assembling procedure and contact laws on low consolidation states*. Physical Review E **75**, 011303. [doi:10.1103/physreve.75.011303](https://doi.org/10.1103/physreve.75.011303).

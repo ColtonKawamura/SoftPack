@@ -21,7 +21,7 @@ write_packing(                  # write one Packing to disk
 - `write_packing(...)` — writes one `Packing` to disk, as a call separate from `pack()`.
   - For details, see [the Packing page](../pack/Packing.md).
 - `"my_packing.h5"` — the output path; `.h5` or `.hdf5` writes HDF5, `.csv` writes CSV.
-  - HDF5 is the default format, read natively by Julia, Python and MATLAB.
+  - HDF5 is the default format, read natively by Julia, Python and MATLAB [HDF5jl], [h5py], [MATLABh5read].
   - For details, see [path and file format](path.md).
 - `my_packing` — the `Packing` to write.
   - The `;` ends the positional arguments and starts the keyword arguments (Julia syntax).
@@ -44,3 +44,24 @@ write_packing(                  # write one Packing to disk
 - [`compression`](compression.md): gzip.
 - [`overwrite`](overwrite.md): replacing an existing file, and safe writes.
 - [`pack()`](../pack/index.md): creating the packing to write.
+
+## Example
+
+```julia
+using SoftPack
+
+packing = pack(particles_count = 64, seed = 1)
+write_packing(
+    "packing.h5",
+    packing;
+    rattlers_file = false,
+    compression = nothing,
+    overwrite = false,
+)
+```
+
+## References
+
+- **[HDF5jl]** JuliaIO. *HDF5.jl documentation*. <https://juliaio.github.io/HDF5.jl/stable/>. Accessed 2026-11-18.
+- **[h5py]** The h5py developers. *Datasets, h5py documentation*. <https://docs.h5py.org/en/stable/high/dataset.html>. Accessed 2026-11-18.
+- **[MATLABh5read]** The MathWorks. *h5read: Read data from HDF5 dataset, MATLAB documentation*. <https://www.mathworks.com/help/matlab/ref/h5read.html>. Accessed 2026-11-18.
