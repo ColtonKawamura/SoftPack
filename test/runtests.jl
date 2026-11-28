@@ -4,6 +4,7 @@ using LinearAlgebra: dot, norm
 using Test
 using HDF5
 using StaticArrays
+using Dates: Millisecond
 
 # A brute-force copy of the probe that made the design's worked example
 # (probe-compression-protocol branch, probes/compression/init_state.jl), so the
@@ -304,6 +305,12 @@ end
 @testset "time step (§12, T-d66w option 1)" begin
     @test SoftPack.timestep_start(CollisionTime(), ones(4), 1.0, 1.0) ≈ pi * sqrt(0.5) / 50
     @test SoftPack.timestep_start(0.01, fill(4.0, 2), 1.0, 4.0) ≈ 0.02
+    # the expected Hertzian overlap uses f = P pi d/(z phi) in 2D and P pi d^2/(z phi)
+    # in 3D; a non-unit diameter exposes the difference
+    @test SoftPack.expected_overlap(Hertzian(), 1.0, 1e-4, 0.1, 2, 0.84) ≈
+          (3 * (1e-4 * pi * 0.1 / (4 * 0.84)))^(2 / 3)
+    @test SoftPack.expected_overlap(Hertzian(), 1.0, 1e-4, 0.1, 3, 0.64) ≈
+          (3 * (1e-4 * pi * 0.01 / (6 * 0.64)))^(2 / 3)
     # friction shortens it: Mindlin at nu = 0 makes the tangential vibration faster
     with = SoftPack.timestep_start(CollisionTime(), ones(2), 1.0, 1.0;
                                    friction = Mindlin(poisson_ratio = 0.0), dimension = 2,
@@ -311,6 +318,20 @@ end
     without = SoftPack.timestep_start(CollisionTime(), ones(2), 1.0, 1.0;
                                       dimension = 2, law = Hertzian(), target = 1e-4)
     @test with < without
+    # the sliding mass includes R^2/I: M_t = M_n/(1 + inertia_ratio) = m/6 in 2D
+    # and m/7 in 3D, so the matched Cundall-Strack ratio gives equal collision times
+    for dimension in (2, 3)
+        matched = SoftPack.timestep_start(CollisionTime(), ones(2), 1.0, 1.0;
+                                          friction = CundallStrack(), dimension = dimension)
+        plain = SoftPack.timestep_start(CollisionTime(), ones(2), 1.0, 1.0;
+                                        dimension = dimension)
+        @test matched ≈ plain
+        # a stiff tangential spring must set the step; M_t = m/6 with ratio 10 in 2D
+        stiff = SoftPack.timestep_start(CollisionTime(), ones(2), 1.0, 1.0;
+                                        friction = CundallStrack(stiffness_ratio = 10.0),
+                                        dimension = 2)
+        @test stiff ≈ (1 / 50) * pi * sqrt((1 / 6) / 10)
+    end
 end
 
 @testset "damped dynamics: one damped oscillator (§8)" begin
@@ -520,6 +541,15 @@ end
         marked = joinpath(directory, "marked.h5")
         write_packing(marked, p; rattlers_file = true, compression = (:gzip, 4))
         @test isfile(SoftPack.second_path(marked))
+        # wall-clock intervals are Dates.Periods (§6, §11)
+        clock = SoftPack.Schedule(Millisecond(100), time(), 0)
+        @test clock.next_step == typemax(Int) && isfinite(clock.next_time)
+        clocked = pack(particles_count = 32, steps_max = 200_000,
+                       snapshots = Snapshots(every = Millisecond(20)),
+                       restart_file = RestartFile(joinpath(directory, "clock.h5");
+                                                  every = Millisecond(20)))
+        @test !isempty(clocked.control.snapshot_frames)
+        @test isfile(joinpath(directory, "clock.h5"))
         snap = joinpath(directory, "snapshots.h5")
         p4 = pack(particles_count = 32, snapshots = Snapshots(every = 2000),
                   steps_max = 200_000)
@@ -581,6 +611,40 @@ end
     end
 end
 
+@testset "unreachable target pressure (§2)" begin
+    # A packing fraction of 1 is the dense limit: a target that needs the particles to
+    # overlap more than their diameter ends with converged = false on the last accepted
+    # state, not with a phi > 1 packing and not with the neighbor list's guard error.
+    p = @test_logs (:warn, r"more than their diameter") (:warn, r"did not converge") match_mode = :any pack(
+        particles_count = 32, target = Pressure(1.0), steps_max = 200_000,
+        convergence = RelativeForce(tolerance = 1e-3))
+    @test !p.converged
+    @test p.stop_reason === :packing_fraction_max
+    @test 0 < p.packing_fraction < 1
+    @test all(isfinite, p.positions)
+    # a large strain step must be rejected and halved, not end the run on the start state
+    q = pack(particles_count = 32, target = Pressure(1e-3),
+             convergence = RelativeForce(tolerance = 1e-3), pressure_tolerance = 0.05,
+             protocol = IsotropicCompression(strain_step = 0.5), steps_max = 200_000)
+    @test q.converged
+    @test q.packing_fraction > 0.8
+end
+
+@testset "rattler rule survives a restart file (§6, §9)" begin
+    @test SoftPack.rattlers_from_dict(SoftPack.rattlers_dict(TwoContact())) isa TwoContact
+    @test SoftPack.rattlers_from_dict(SoftPack.rattlers_dict(ContactCount())) == ContactCount()
+    # a user function is refused on restart, not silently dropped
+    @test_throws ArgumentError SoftPack.rattlers_from_dict("custom")
+    mktempdir() do directory
+        path = joinpath(directory, "two-contact.h5")
+        p = pack(particles_count = 32, rattlers = TwoContact(), steps_max = 2_000_000)
+        write_packing(path, p)
+        @test isfile(path)
+        q = pack(restart_packing = path, steps_max = 200_000)
+        @test q.settings.rattlers isa TwoContact
+    end
+end
+
 @testset "failure handling (§6)" begin
     p = @test_logs (:warn, r"did not converge") pack(steps_max = 500)
     @test !p.converged && p.stop_reason === :steps_max && p.steps == 500
@@ -605,6 +669,11 @@ end
     @test_throws ArgumentError pack(particles_count = 1)
     @test_throws ArgumentError pack(failure_action = :ignore)
     @test_throws ArgumentError pack(restart_packing = joinpath(tempdir(), "missing.h5"))
+    # a zero interval would record a frame every step and exhaust memory
+    @test_throws ArgumentError pack(snapshots = Snapshots(every = 0))
+    @test_throws ArgumentError pack(movie = Movie("m.mp4"; every = 0))
+    @test_throws ArgumentError pack(movie = Movie("m.mp4"; every = 10, size = 0))
+    @test_throws ArgumentError pack(restart_file = RestartFile("r.h5"; every = Millisecond(0)))
 end
 
 @testset "Float64 floor warning (T-2brz option 1)" begin

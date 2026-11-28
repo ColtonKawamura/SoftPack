@@ -18,8 +18,9 @@ Results: `box_side`, `pressure` (elastic virial pressure), `packing_fraction` (a
 particles), `contact_number` (mean contacts per particle after rattler removal, counting
 only contacts between remaining particles), `force_residual` (`max_i |F_i| / <f_n>`).
 
-Run: `converged`, `stop_reason` (`:converged`, `:steps_max`, `:uphill_max` or
-`:strain_step_min`), `steps`, `compression_steps_accepted`, `compression_steps_rejected`,
+Run: `converged`, `stop_reason` (`:converged`, `:steps_max`, `:uphill_max`,
+`:strain_step_min`, `:pressure_left_band`, `:restart_test` or `:packing_fraction_max`),
+`steps`, `compression_steps_accepted`, `compression_steps_rejected`,
 `strain_step_final`, `timestep_start`, `runtime_seconds`.
 
 Scales and provenance: `diameter_reference`, `diameter_mean`, `mass_reference`,

@@ -23,7 +23,11 @@ function expected_overlap(law::Hertzian, stiffness::Float64, target::Float64,
                           diameter_ref::Float64, dimension::Int,
                           packing_fraction::Float64)
     contacts = 2 * dimension                      # z near jamming: 4 in 2D, 6 in 3D
-    force = target * pi * diameter_ref / (contacts * packing_fraction)
+    # P = z f d phi / (2 D v1) with v1 the particle area or volume, so the typical
+    # force is P pi d/(z phi) in 2D and P pi d^2/(z phi) in 3D.
+    force = dimension == 2 ?
+        target * pi * diameter_ref / (contacts * packing_fraction) :
+        target * pi * diameter_ref * diameter_ref / (contacts * packing_fraction)
     return (3 * force / stiffness)^(2 / 3)
 end
 
@@ -65,8 +69,9 @@ function timestep_start(rule::CollisionTime, masses::Vector{Float64},
         return rule.fraction * pi * sqrt(mass_normal / normal_stiffness)
     end
     tangential_k = tangential_stiffness(friction, normal_stiffness, dimension)
-    # 1/M_t = (1 + 1/kappa)/M_n for a pair of one shape (design §8)
-    mass_tangential = mass_normal / (1 + 1 / inertia_ratio(dimension))
+    # 1/M_t = (1 + 1/kappa)/M_n = (1 + inertia_ratio)/M_n for a pair of one shape
+    # (design §8), so M_t = M_n/(1 + inertia_ratio).
+    mass_tangential = mass_normal / (1 + inertia_ratio(dimension))
     normal_time = sqrt(mass_normal / max(normal_stiffness, eps()))
     tangential_time = sqrt(mass_tangential / max(tangential_k, eps()))
     return rule.fraction * pi * min(normal_time, tangential_time)

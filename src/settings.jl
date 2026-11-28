@@ -561,6 +561,13 @@ function validate(p::PackParams)
     (p.snapshots === nothing || p.snapshots isa Snapshots) ||
         not_implemented("snapshots", p.snapshots)
     (p.movie === nothing || p.movie isa Movie) || not_implemented("movie", p.movie)
+    p.snapshots === nothing || validate_interval(p.snapshots.every, "snapshots")
+    if p.movie !== nothing
+        validate_interval(p.movie.every, "movie")
+        p.movie.size > 0 || throw(ArgumentError("movie size must be positive"))
+        p.movie.fps > 0 || throw(ArgumentError("movie fps must be positive"))
+    end
+    p.restart_file === nothing || validate_interval(p.restart_file.every, "restart_file")
     0 <= p.seed <= typemax(Int) ||
         throw(ArgumentError("seed must lie between 0 and $(typemax(Int)), got $(p.seed)"))
     if p.rattlers isa Unresolved && p.rattlers.floor === :tolerance &&
@@ -684,6 +691,17 @@ function validate_drag(drag)
     drag.during in (:always, :compression) ||
         throw(ArgumentError("during must be :always or :compression"))
     return drag
+end
+
+function validate_interval(every::Integer, name)
+    every > 0 || throw(ArgumentError("$name every must be a positive number of steps, " *
+                                     "got $every"))
+    return every
+end
+function validate_interval(every::Period, name)
+    Dates.Millisecond(every).value > 0 ||
+        throw(ArgumentError("$name every must be a positive duration, got $every"))
+    return every
 end
 
 function validate_rattlers(rattlers)

@@ -208,6 +208,13 @@ function finish_packing(s::System{D,NR}, params::PackParams, control::RunControl
     end
     check_timestep_warning(s, timestep, params)
     finish_movie!(control)
+    if outcome.status === :packing_fraction_max
+        fraction = total_volume(s.diameters, D) / s.side^D
+        push!(control.warnings, "the target pressure $(params.target.value) is out of reach " *
+              "below packing fraction 1: reaching it would make the particles overlap more " *
+              "than their diameter. Stopped at the last accepted packing, phi = " *
+              "$(round(fraction, digits = 4)); lower the target or stiffen the contact law.")
+    end
     for message in control.warnings
         @warn message
     end

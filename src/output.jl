@@ -144,6 +144,27 @@ csv_contacts_path(path::AbstractString) = begin
 end
 
 """
+    write_atomic(f, path)
+
+Run `f(io)` on a temporary file in the target's directory and rename it over `path`, so a
+killed write leaves any existing file intact (design §11, "Safe writes").
+"""
+function write_atomic(f::F, path::AbstractString) where {F}
+    directory = dirname(abspath(path))
+    isdir(directory) || mkpath(directory)
+    temporary, io = mktemp(directory; cleanup = false)
+    close(io)
+    try
+        open(f, temporary, "w")
+        mv(temporary, path; force = true)
+    catch
+        rm(temporary; force = true)
+        rethrow()
+    end
+    return nothing
+end
+
+"""
     write_csv(path, packing; all, rattlers)
 
 The CSV option (PROVISIONAL T-zk8c): one table per file, a `#` line of settings, then the
@@ -153,7 +174,7 @@ function write_csv(path::AbstractString, p::Packing{D}; all::Bool, rattlers::Boo
     keep = all ? collect(1:length(p.diameters)) : findall(!, p.rattlers)
     particles_path = csv_particles_path(path)
     contacts_path = csv_contacts_path(path)
-    open(particles_path, "w") do io
+    write_atomic(particles_path) do io
         println(io, "# SoftPack ", p.softpack_version, " ", p.softpack_commit,
                 " seed ", p.seed, " dimension ", D, " box_side ", p.box_side,
                 " pressure ", p.pressure, " packing_fraction ", p.packing_fraction,
@@ -171,7 +192,7 @@ function write_csv(path::AbstractString, p::Packing{D}; all::Bool, rattlers::Boo
     end
     keep_set = falses(length(p.diameters))
     keep_set[keep] .= true
-    open(contacts_path, "w") do io
+    write_atomic(contacts_path) do io
         println(io, "# first and second are 0-based particle ids; second = -1 marks a wall")
         println(io, "first,second,wall_id,overlap,normal_force,tangential_force,sliding")
         table = p.contacts

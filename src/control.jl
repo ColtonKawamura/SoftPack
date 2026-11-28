@@ -41,7 +41,7 @@ end
 
 Schedule(every::Integer, started::Float64, step::Int = 0) =
     Schedule(every, step + Int(every), Inf, started)
-Schedule(every::Period, started::Float64) =
+Schedule(every::Period, started::Float64, step::Int = 0) =
     Schedule(every, typemax(Int), started + Dates.Millisecond(every).value / 1000, started)
 
 """
@@ -132,7 +132,10 @@ function record_step!(control::RunControl{D}, s::System{D}) where {D}
                              sum_in_order(d -> d, s.diameters) / length(s.diameters),
                              mass_reference(control.params.mass, s.masses),
                              control.time_step)
-        write_state(control.params.restart_file.path, s, control, results)
+        # Snapshot frames are output (§11), not run state: rewriting every frame collected
+        # so far into every mid-run restart file makes the I/O quadratic in the frame
+        # count. The final write_state and write_packing still store them.
+        write_state(control.params.restart_file.path, s, control, results; snapshots = false)
         advance!(control.restart_schedule, control.step)
     end
     if control.snapshot_schedule !== nothing && due!(control.snapshot_schedule, control.step)

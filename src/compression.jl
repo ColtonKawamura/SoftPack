@@ -6,7 +6,7 @@
     CompressionOutcome
 
 How the compression ended. `status` is `:converged`, `:steps_max`, `:uphill_max`,
-`:strain_step_min`, `:pressure_left_band` or `:restart_test`.
+`:strain_step_min`, `:pressure_left_band`, `:restart_test` or `:packing_fraction_max`.
 """
 struct CompressionOutcome
     status::Symbol
@@ -69,6 +69,28 @@ function compress!(s::System{D}, params::PackParams, control::RunControl{D},
         end
         copyto!(s.last_positions, s.positions)
         copyto!(s.last_rotations, s.rotations)
+        # A packing fraction of 1 puts more particle volume in the box than the box holds;
+        # past it the overlaps exceed the particle diameter and the contact model no longer
+        # describes a packing. Treat such a trial like an over-pressure one: reject it and
+        # halve the strain, so a large strain_step still works. Only when the step can no
+        # longer shrink does the run end with converged = false, on the last accepted state
+        # (this also keeps the neighbor list's nearest-image guard from firing with a
+        # misleading "use more particles" error).
+        if total_volume(s.diameters, D) / s.side^D >= 1
+            compression.rejected += 1
+            compression.strain /= 2
+            if compression.strain < 1e-14
+                s.side = compression.accepted_side
+                @inbounds for i in eachindex(s.positions)
+                    s.positions[i] = compression.accepted_positions[i]
+                end
+                copyto!(s.last_positions, s.positions)
+                evaluate_forces!(s)
+                return CompressionOutcome(:packing_fraction_max, total, compression.accepted,
+                                          compression.rejected, compression.strain)
+            end
+            continue
+        end
         compression.mid_trial = true
         steps_left = control.steps_max - (control.step - control.step_at_start)
         steps_left <= 0 &&

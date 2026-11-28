@@ -87,6 +87,8 @@ function convergence_from_dict(d)
 end
 
 function rattlers_from_dict(d)
+    d == "custom" &&
+        throw(ArgumentError("a user rattler rule cannot be restarted; pass rattlers explicitly"))
     (d === nothing || d == "nothing") && return nothing
     haskey(d, "two") && return TwoContact()
     if haskey(d, "floor")
@@ -208,12 +210,14 @@ end
 function rattlers_dict(rule)
     rule === nothing && return "nothing"
     rule isa ContactCount && return Dict("cone_test" => rule.cone_test)
-    rule isa TwoContact && return Dict("cone_test" => rule.cone_test, "two" => true)
+    rule isa TwoContact && return Dict("two" => true)
     rule isa ForceFloor && return Dict("cone_test" => rule.cone_test, "floor" => rule.floor)
     rule isa Unresolved && return Dict("cone_test" => rule.cone_test,
                                        "floor" => rule.floor === :tolerance ?
                                                  "tolerance" : rule.floor)
-    return "nothing"
+    # A user function cannot be serialized; say so on restart instead of silently
+    # dropping it and returning a packing with a different rattler treatment.
+    return "custom"
 end
 
 # --- Writing -----------------------------------------------------------------
@@ -250,7 +254,8 @@ Write the full run state to `path` in the restart format, atomically: a temporar
 the same directory is renamed over `path` (design §6, "Safe writes").
 """
 function write_state(path::AbstractString, s::System{D,NR}, control::RunControl{D},
-                     results::RunResults; compression = nothing) where {D,NR}
+                     results::RunResults; compression = nothing,
+                     snapshots::Bool = true) where {D,NR}
     level = compression === nothing ? nothing :
         (compression isa Tuple ? Int(compression[2]) : 4)
     directory = dirname(abspath(path))
@@ -324,7 +329,7 @@ function write_state(path::AbstractString, s::System{D,NR}, control::RunControl{
                                            fire_state.uphill_count
             f["state/compression/accepted_positions"] =
                 positions_matrix(compression.accepted_positions)
-            if !isempty(control.snapshot_frames)
+            if snapshots && !isempty(control.snapshot_frames)
                 frames = Array{Float64}(undef, D, size(control.snapshot_frames[1], 2),
                                         length(control.snapshot_frames))
                 for (k, frame) in enumerate(control.snapshot_frames)
