@@ -134,23 +134,24 @@ The `RestartTest` (design §5): with the trial in the band and drag off, zero th
 velocities and relax for up to 2000 steps; the packing passes when the mean kinetic energy
 stays below the `KineticEnergy` scale and the unbalanced forces do not double.
 
-PROVISIONAL T-ksjz: the design fixes the watch (Agnolin's observation) but not its length
-or thresholds; 2000 steps, the `KineticEnergy` default 1e-8 and a factor two are my
-choices.
+Card T-2brz: the design fixes the watch (Agnolin's observation) but not its length or
+thresholds, so they are keywords of `RestartTest` with the values the first implementation
+hard-coded: 2000 steps, growth 2 and the `KineticEnergy` default 1e-8.
 """
 function restart_watch!(s::System{D}, params::PackParams, control::RunControl{D},
                         timestep::Float64, ctx::ConvergenceContext) where {D}
+    test = params.convergence::RestartTest
     before_force = largest_force(s.forces)
     fill!(s.velocities, zero(SVector{D,Float64}))
     fill!(s.spins, zero(eltype(s.spins)))
     evaluate_forces!(s)
-    steps_left = min(2000, control.steps_max - (control.step - control.step_at_start))
+    steps_left = min(test.watch, control.steps_max - (control.step - control.step_at_start))
     steps_left <= 0 && return true, 0
     _, steps = run_minimization!(s, params.algorithm, timestep, _ -> false, ctx, control,
                                  false, steps_left)
     state = run_state(s, contact_pressure(s.table, s.side, D), control.step, params)
-    energy_limit = 1e-8 * params.target.value * ctx.diameter_ref^D
+    energy_limit = test.energy_tolerance * params.target.value * ctx.diameter_ref^D
     passed = mean_kinetic_energy(state) <= energy_limit &&
-             largest_force(s.forces) <= max(2 * before_force, ctx.force_floor)
+             largest_force(s.forces) <= max(test.growth * before_force, ctx.force_floor)
     return passed, steps
 end

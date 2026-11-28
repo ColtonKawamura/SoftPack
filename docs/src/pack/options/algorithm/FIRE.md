@@ -30,10 +30,17 @@ values. You rarely need to touch them.
 | `inertia_correction` | `true` | whether $\alpha$ follows the standard FIRE schedule |
 | `delay_initial` | `true` | whether the first `delay` steps are taken before growth |
 | `integrator` | `:semi_implicit_euler` | the only integrator FIRE implements |
+| `displacement_max` | `0.1` | the largest displacement of one step, in reference diameters |
 | `damping` | `nothing` | optional contact dashpots, see [damping](DampedDynamics/damping/index.md) |
 | `drag` | `nothing` | optional Stokes drag, see [drag](DampedDynamics/drag/index.md) |
 
 ## Checks
+
+The mixing is mass-weighted (card T-3qkf): the speed is
+$\sqrt{\sum_i m_i|v_i|^2 + \sum_i I_i|\omega_i|^2}$, the force direction is
+$F_i/m_i$ and $\tau_i/I_i$, and the power that decides downhill is taken from the elastic
+forces alone, so a dashpot or drag cannot steer the minimization. With equal masses and no
+rotation this reduces to the unweighted rule, bit for bit.
 
 FIRE validates its own parameters at the call (card T-3qkf): `timestep_min` must not
 exceed `timestep_max`, `timestep_grow` must be at least 1, `timestep_shrink` must lie in

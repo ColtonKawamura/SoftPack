@@ -114,16 +114,22 @@ function minimize!(s::System{D,NR}, fire::FIRE, timestep_start::Float64, test,
         step += 1
         control.step += 1
         total_forces!(total_force, total_torque, s, fire, velocities, spins, drag_on)
+        # Card T-3qkf: the power and the mixing direction come from the elastic forces, so a
+        # dashpot or drag cannot steer the minimization; the kick below still uses the total.
         power = 0.0
         @inbounds for i in eachindex(s.forces)
-            power += dot_in_order(total_force[i], velocities[i])
-            power += dot_in_order(total_torque[i], spins[i])
+            power += dot_in_order(s.forces[i], velocities[i])
+            power += dot_in_order(s.torques[i], spins[i])
         end
         if power > 0
             downhill!(st, fire)
             mix = true
-            speed = sqrt(sum_in_order(v -> dot_in_order(v, v), velocities))
-            spin_speed = sqrt(sum_in_order(w -> dot_in_order(w, w), spins))
+            # the mass-weighted speed, sqrt(2K): |sqrt(m) v|^2 + |sqrt(I) omega|^2
+            speed_squared = 0.0
+            @inbounds for i in eachindex(velocities)
+                speed_squared += s.masses[i] * dot_in_order(velocities[i], velocities[i])
+                speed_squared += s.moments[i] * dot_in_order(spins[i], spins[i])
+            end
         else
             uphill!(st, fire, step) && return (:uphill_max, step)
             if fire.inertia_correction                       # half step back, new step size
@@ -137,8 +143,7 @@ function minimize!(s::System{D,NR}, fire::FIRE, timestep_start::Float64, test,
             evaluate_forces!(s)
             total_forces!(total_force, total_torque, s, fire, velocities, spins, drag_on)
             mix = false
-            speed = 0.0
-            spin_speed = 0.0
+            speed_squared = 0.0
         end
         dt = st.timestep
         @inbounds for i in eachindex(velocities)             # kick
@@ -146,18 +151,31 @@ function minimize!(s::System{D,NR}, fire::FIRE, timestep_start::Float64, test,
             spins[i] += (dt / s.moments[i]) * total_torque[i]
         end
         if mix
-            force_norm = sqrt(sum_in_order(f -> dot_in_order(f, f), total_force))
-            torque_norm = sqrt(sum_in_order(t -> dot_in_order(t, t), total_torque))
+            # mass-weighted force norm, sqrt(2 * F^2 / m): |F/sqrt(m)|^2 + |tau/sqrt(I)|^2
+            force_squared = 0.0
+            @inbounds for i in eachindex(s.forces)
+                force_squared += dot_in_order(s.forces[i], s.forces[i]) / s.masses[i]
+                force_squared += dot_in_order(s.torques[i], s.torques[i]) / s.moments[i]
+            end
             keep = 1 - st.mixing
             # PROVISIONAL T-vcne (F = 0 case): a term is dropped only when the net force or
             # torque is exactly zero. LAMMPS drops it below |F|^2 = 1e-20, a cutoff in its own
             # units that at SoftPack's pressures would act near convergence.
-            steer = force_norm > 0 ? st.mixing * speed / force_norm : 0.0
-            spin_steer = torque_norm > 0 ? st.mixing * spin_speed / torque_norm : 0.0
+            steer = force_squared > 0 ?
+                st.mixing * sqrt(speed_squared / force_squared) : 0.0
             @inbounds for i in eachindex(velocities)
-                velocities[i] = keep * velocities[i] + steer * total_force[i]
-                spins[i] = keep * spins[i] + spin_steer * total_torque[i]
+                velocities[i] = keep * velocities[i] + steer * s.forces[i] / s.masses[i]
+                spins[i] = keep * spins[i] + steer * s.torques[i] / s.moments[i]
             end
+        end
+        # Card T-3qkf: cap the displacement of one step at displacement_max diameters.
+        if fire.displacement_max > 0
+            dmax = fire.displacement_max * ctx.diameter_ref
+            vmax = 0.0
+            @inbounds for i in eachindex(velocities)
+                vmax = max(vmax, sqrt(dot_in_order(velocities[i], velocities[i])))
+            end
+            vmax > 0 && (dt = min(dt, dmax / vmax))
         end
         @inbounds for i in eachindex(positions)               # drift
             positions[i] += dt * velocities[i]

@@ -20,7 +20,7 @@ source, so a reader can check one implementation against another. The alternativ
 keep the prose and change the pseudocode, which would have left the default trajectory
 defined only by a sentence.
 
-**Status.** In code (`src/fire.jl`); the default run's 86,860 steps pin it.
+**Status.** In code (`src/fire.jl`); the default run's 87,757 steps pin it.
 
 ## Archival reference
 

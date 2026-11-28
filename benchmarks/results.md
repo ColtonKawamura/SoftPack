@@ -9,20 +9,30 @@ otherwise.
 
 | D | N | phi | z | rattlers | steps | time (s) | ms per 1e3 steps |
 |---|---|---|---|---|---|---|---|
-| 2 | 256 | 0.8387 | 4.0164 | 12 | 86860 | 0.7 | 0.01 |
-| 2 | 1024 | 0.8409 | 4.0369 | 49 | 189433 | 6.5 | 0.03 |
-| 2 | 4096 | 0.8410 | 4.0470 | 178 | 722190 | 127.8 | 0.18 |
-| 3 | 512 | 0.6465 | 6.1089 | 16 | 204583 | 7.3 | 0.04 |
-| 3 | 4096 | 0.6467 | 6.1353 | 135 | 1637047 | 580.8 | 0.35 |
+| 2 | 256 | 0.8387 | 4.0164 | 12 | 87757 | 0.7 | 0.01 |
+| 2 | 1024 | 0.8410 | 4.0429 | 46 | 206737 | 7.5 | 0.04 |
+| 2 | 4096 | 0.8415 | 4.0452 | 201 | 612676 | 112.6 | 0.18 |
+| 3 | 512 | 0.6403 | 6.1087 | 15 | 206020 | 7.2 | 0.03 |
+| 3 | 4096 | 0.6464 | 6.1318 | 165 | 661770 | 238.3 | 0.36 |
+
+These numbers were re-measured after the FIRE mixing became mass-weighted (card
+T-3qkf). The mixing is exact-arithmetic equivalent for equal masses without rotation,
+but the last bits change and a chaotic trajectory lands in a different jammed state;
+single-seed frictional values move by a few percent between such changes, which is why
+they are quoted with the rule that produced them.
+
+The 3D N = 512 row is one seed: the packing fraction of a 512-sphere packing
+fluctuates by about 0.005 between seeds, so the N = 4096 row or an ensemble is the
+value to quote.
 
 ## Pressure sweep, 2D, N = 256, seeds 1-3
 
 | P | phi (mean ± sd) | z | z - z_iso | rattlers | steps (mean) | time (s, mean) |
 |---|---|---|---|---|---|---|
-| 1e-02 | 0.8626 ± 0.0013 | 4.5170 | 0.5249 | 2.0 | 22412 | 0.21 |
-| 1e-03 | 0.8424 ± 0.0022 | 4.1364 | 0.1444 | 6.7 | 53825 | 0.51 |
-| 1e-04 | 0.8383 ± 0.0012 | 4.0217 | 0.0299 | 10.7 | 100492 | 0.96 |
-| 1e-05 | 0.8381 ± 0.0012 | 3.9918 | -0.0000 | 12.0 | 142186 | 1.35 |
+| 1e-02 | 0.8626 ± 0.0013 | 4.5170 | 0.5249 | 2.0 | 22479 | 0.20 |
+| 1e-03 | 0.8423 ± 0.0023 | 4.1339 | 0.1419 | 7.0 | 56701 | 0.51 |
+| 1e-04 | 0.8383 ± 0.0012 | 4.0244 | 0.0325 | 10.3 | 81800 | 0.73 |
+| 1e-05 | 0.8380 ± 0.0012 | 3.9945 | 0.0027 | 10.3 | 146133 | 1.30 |
 
 ## Friction, 2D, N = 256, P = 1e-4, FIRE (the non-standard combination of design §7)
 
@@ -31,34 +41,34 @@ not the frictionless finite-size value.
 
 | mu | phi | z | z - z_iso | rattlers | steps | time (s) |
 |---|---|---|---|---|---|---|
-| CundallStrack(0.1) | 0.8131 | 3.7106 | 0.711 | 21 | 39137 | 0.8 |
-| CundallStrack(0.3) | 0.7997 | 3.3712 | 0.371 | 27 | 66256 | 0.6 |
-| CundallStrack(0.5) | 0.7856 | 3.2035 | 0.204 | 30 | 144411 | 1.3 |
+| CundallStrack(0.1) | 0.8160 | 3.7009 | 0.701 | 22 | 32538 | 0.9 |
+| CundallStrack(0.3) | 0.7927 | 3.3482 | 0.348 | 32 | 35601 | 0.4 |
+| CundallStrack(0.5) | 0.7825 | 3.1786 | 0.179 | 32 | 66249 | 0.6 |
 
 ## Other contact laws and boundaries, 2D, P = 1e-4
 
 | setting | N | phi | z | steps | time (s) |
 |---|---|---|---|---|---|
-| Hertzian | 256 | 0.8447 | 4.1526 | 44683 | 0.7 |
-| Hertzian + Mindlin | 128 | 0.7793 | 3.3950 | 80578 | 0.7 |
-| Walls (friction on) | 256 | 0.8115 | 4.0328 | 85771 | 1.3 |
-| Walls(friction = false), mu = 0.3 | 256 | 0.7784 | 3.5193 | 27582 | 0.7 |
-| Density masses | 256 | 0.8417 | 4.0081 | 82317 | 0.7 |
+| Hertzian | 256 | 0.8447 | 4.1526 | 44485 | 0.8 |
+| Hertzian + Mindlin | 128 | 0.8006 | 3.3097 | 128464 | 1.1 |
+| Walls (friction on) | 256 | 0.8115 | 4.0415 | 95151 | 1.5 |
+| Walls(friction = false), mu = 0.3 | 256 | 0.7781 | 3.5085 | 67024 | 1.3 |
+| Density masses | 256 | 0.8355 | 4.0244 | 83791 | 0.8 |
 
 ## Cost of the force tolerance, 2D, N = 256, P = 1e-4
 
 | tolerance | phi | steps (mean of 2 seeds) | time (s, mean) |
 |---|---|---|---|
-| 0.0001 | 0.8378 | 55224 | 0.44 |
-| 1.0e-6 | 0.8378 | 70886 | 0.56 |
-| 1e-8 (default, scaling table, seed 1) | 0.8387 | 86860 | 0.72 |
+| 0.0001 | 0.8378 | 58138 | 0.52 |
+| 1.0e-6 | 0.8378 | 63806 | 0.56 |
+| 1e-8 (default, scaling table, seed 1) | 0.8387 | 87757 | 0.70 |
 
 ## Damped dynamics: the slow path
 
 | mu | tolerance | N | converged | status | phi | P reached | steps | time (s) |
 |---|---|---|---|---|---|---|---|---|
-| none | 0.0001 | 32 | false | steps_max | 0.8308 | 1.16e-03 | 500000 | 59.9 |
-| CundallStrack(0.3) | 0.001 | 32 | false | steps_max | 0.8143 | 2.50e-05 | 500000 | 78.6 |
+| none | 0.0001 | 32 | false | steps_max | 0.8308 | 1.16e-03 | 500000 | 64.0 |
+| CundallStrack(0.3) | 0.001 | 32 | false | steps_max | 0.8143 | 2.50e-05 | 500000 | 79.6 |
 
 Damped dynamics is stable and correct (the pair tests in the suite converge for all three
 integrators), but it does not reach the tight force tolerances here in 5e5 steps with

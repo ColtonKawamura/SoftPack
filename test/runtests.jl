@@ -430,8 +430,10 @@ end
     # 1.13. Update these two numbers only when a change to the trajectory is intended.
     bits = foldl((h, v) -> xor(h * 0x100000001b3, reinterpret(UInt64, v)), vec(p.positions);
                  init = 0xcbf29ce484222325)
-    @test p.steps == 86860
-    @test bits == 0x1cf7db36917d17d6
+    # card T-3qkf: displacement_max = 0.1 d changed the default trajectory; these numbers
+    # were re-baselined with it (was 86860 and 0x1cf7db36917d17d6)
+    @test p.steps == 87757
+    @test bits == 0xe29d35fa9fdf0463
     q = pack()
     @test q.positions == p.positions && q.steps == p.steps
     r = pack(seed = 2)

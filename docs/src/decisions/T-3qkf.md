@@ -6,20 +6,22 @@
 defined behaviour: spins under mixing, masses that differ, dashpots with an adaptive
 step, and a step that could grow without a displacement check.
 
-**Choice.** The parts that are in code now: FIRE checks its parameters at the call
-(`timestep_min <= timestep_max`, `timestep_grow >= 1`, `0 < timestep_shrink <= 1`,
-non-negative delay), warns once that FIRE with friction is non-standard, and clamps its
-step to the damped stability limit when `damping` is set. The rest of the card is adopted
-but not yet coded: the mass-weighted mixing norm, spins scaled by $\sqrt{I/m}$ so the
-norm is twice the kinetic energy, and the `displacement_max` keyword with its 0.1 $d$
-default.
+**Choice.** All of it is in code. FIRE checks its parameters at the call, warns that FIRE
+with friction is non-standard, and clamps its step to the damped stability limit when
+`damping` is set. The mixing is mass-weighted: the speed is
+$\sqrt{2K} = \sqrt{\sum_i m_i|v_i|^2 + \sum_i I_i|\omega_i|^2}$, the force direction is
+$F_i/m_i$ and $\tau_i/I_i$, and the power is taken from the elastic forces alone.
+`displacement_max` caps one step's displacement at 0.1 reference diameters.
 
-**Why.** The parameter checks and the damping cap are safety rules that cannot change a
-valid run, so they ship now. The mass-weighted mixing changes the trajectory whenever the
-masses differ, and it needs its own tests and a re-baselined default; doing it in the same
-change as the rest would have hidden a physics change inside a validation patch.
+**Why.** Mass weighting makes the mixing a statement about kinetic energy rather than
+about raw velocity, which is what FIRE's derivation assumes; with equal masses and no
+rotation it reduces to the old rule bit for bit, so it only changes runs that have a
+reason to change. The displacement cap is the LAMMPS `dmin` default and protects a
+violent step from jumping a particle across a contact.
 
-**Status.** Partly in code; the mixing and `displacement_max` are queued.
+**Status.** In code. The cap changed the default trajectory once (the run now takes 87,757
+steps instead of 86,860 and a different final state in the last bits), and the pinned test
+and the benchmarks were re-baselined with it.
 
 ## Archival reference
 

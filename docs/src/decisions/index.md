@@ -26,7 +26,7 @@ goes wrong must leave its work where you can look at it.
 | [T-196b](T-196b.md) | HDF5 schema | remaining particles in the main groups, full state in `state` | in code |
 | [T-zk8c](T-zk8c.md) | CSV and compression | format from the extension; CSV cannot restart | in code |
 | [T-1x2y](T-1x2y.md) | Section 0 and public types | every keyword and field listed; `max` allowed | in docs |
-| [T-3qkf](T-3qkf.md) | FIRE with friction and density masses | checks and warnings now; mass-weighted mixing later | part in code |
+| [T-3qkf](T-3qkf.md) | FIRE with friction and density masses | mass-weighted mixing, displacement cap, checks | in code |
 | [T-4htp](T-4htp.md) | CundallStrack and Mindlin under Hertz | `Mindlin` needs `Hertzian`; CS uses the instantaneous stiffness | in code |
 | [T-0h3w](T-0h3w.md) | GranE parity | keep the design; parity is statistical | recorded |
 | [T-2brz](T-2brz.md) | Values to measure | keep $10^{-8}$; the timings are a release gate | in code |

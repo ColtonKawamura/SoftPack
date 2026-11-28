@@ -9,8 +9,9 @@ convergence tests had unspecified content.
 release gate; warn at run start when the Float64 floor makes that tolerance unreachable.
 `KineticEnergy` counts translational and rotational energy per particle; the rotational
 term was fixed for 3D in this decision. `LeidenAcceleration` stays translational.
-`RestartTest` is the force test plus a second minimization, and its watch length and
-growth rule are still fixed constants. The measured data are in
+`RestartTest` is the force test plus a second minimization, and its watch length, growth
+factor and energy scale are now keywords (`watch`, `growth`, `energy_tolerance`) with the
+values the first implementation hard-coded. The measured data are in
 [`benchmarks/results.md`](https://github.com/ColtonKawamura/SoftPack/blob/main/benchmarks/results.md): FIRE reaches $10^{-4}$ in
 about 55,000 steps and $10^{-8}$ in 87,000, while damped dynamics does not reach
 $10^{-4}$ (frictionless, $N = 32$) in $5 \times 10^5$ steps.
@@ -20,7 +21,7 @@ supposed to measure. The measurements already show that damped dynamics needs a 
 tolerance or drag `during = :always`; that is a documented caveat, not a reason to change
 the default for the FIRE path.
 
-**Status.** In code and measured; the `RestartTest` keyword is queued.
+**Status.** In code and measured.
 
 ## Archival reference
 

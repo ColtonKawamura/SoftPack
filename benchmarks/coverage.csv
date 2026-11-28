@@ -1,6 +1,6 @@
 section,name,status,detail,seconds
-api,contact_pressure,ok,9.999168728850893e-5,0.00
-api,mean_normal_force,ok,0.00012141028051995128,0.00
+api,contact_pressure,ok,9.999168728783112e-5,0.00
+api,mean_normal_force,ok,0.00012141028051940173,0.00
 api,is_converged,ok,true,0.00
 api,run_state,ok,RunState of 32 particles,0.00
 api,find_rattlers ContactCount,ok,rattlers=2,0.00
@@ -11,138 +11,138 @@ api,find_rattlers Unresolved,ok,rattlers=2,0.00
 api,find_rattlers custom,ok,rattlers=0,0.00
 api,write_packing hdf5 and csv,ok,,0.00
 one_factor,distribution Bidisperse,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-one_factor,distribution Monodisperse,ok,phi=0.8334 z=4.1250 conv=true steps=6750,0.03
+one_factor,distribution Monodisperse,ok,phi=0.8334 z=4.1250 conv=true steps=6758,0.01
 one_factor,distribution UniformPolydisperse,ok,phi=0.8256 z=3.9355 conv=true steps=6159,0.01
-one_factor,contact Hertzian,ok,phi=0.8466 z=4.2500 conv=true steps=5050,0.42
-one_factor,friction CundallStrack,ok,phi=0.8184 z=3.5714 conv=true steps=3456,0.58
-one_factor,friction Mindlin,ok,phi=0.8319 z=3.8065 conv=true steps=5881,0.43
-one_factor,mass Density,ok,phi=0.8310 z=4.0645 conv=true steps=6546,0.01
-one_factor,boundary Walls,ok,phi=0.7690 z=4.1379 conv=true steps=7993,0.53
+one_factor,contact Hertzian,ok,phi=0.8466 z=4.2500 conv=true steps=5050,0.41
+one_factor,friction CundallStrack,ok,phi=0.8107 z=3.4286 conv=true steps=4545,0.57
+one_factor,friction Mindlin,ok,phi=0.8236 z=3.7333 conv=true steps=6018,0.42
+one_factor,mass Density,ok,phi=0.8310 z=4.0645 conv=true steps=6460,0.01
+one_factor,boundary Walls,ok,phi=0.7690 z=4.1379 conv=true steps=7993,0.47
 one_factor,boundary Walls no friction,ok,phi=0.7690 z=4.1379 conv=true steps=7993,0.01
-one_factor,initial Dilute,ok,phi=0.8365 z=4.1875 conv=true steps=6005,0.01
+one_factor,initial Dilute,ok,phi=0.8365 z=4.1875 conv=true steps=6001,0.01
 one_factor,protocol IsotropicCompression,ok,phi=0.8310 z=4.0645 conv=true steps=10445,0.01
-one_factor,convergence LeidenAcceleration,ok,phi=0.8310 z=4.0645 conv=true steps=8593,0.06
-one_factor,convergence KineticEnergy,ok,phi=0.8310 z=4.0645 conv=true steps=9107,0.05
-one_factor,convergence RestartTest,ok,phi=0.8310 z=4.0645 conv=true steps=11020,0.05
+one_factor,convergence LeidenAcceleration,ok,phi=0.8310 z=4.0645 conv=true steps=8593,0.05
+one_factor,convergence KineticEnergy,ok,phi=0.8310 z=4.0645 conv=true steps=9111,0.06
+one_factor,convergence RestartTest,ok,phi=0.8310 z=4.0645 conv=true steps=11023,0.05
 one_factor,convergence custom,ok,phi=0.2551 z=0.0000 conv=false steps=2001,0.01
 one_factor,timestep CollisionTime,ok,phi=0.8310 z=4.0645 conv=true steps=19516,0.02
-one_factor,timestep number,ok,phi=0.8310 z=4.0645 conv=true steps=8810,0.01
+one_factor,timestep number,ok,phi=0.8310 z=4.0645 conv=true steps=8817,0.01
 one_factor,rattlers ContactCount cone off,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
 one_factor,rattlers TwoContact,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
 one_factor,rattlers ForceFloor,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
 one_factor,rattlers Unresolved,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
 one_factor,rattlers custom,ok,phi=0.8310 z=4.0000 conv=true steps=6484,0.01
 one_factor,algorithm FIRE explicit,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-one_factor,algorithm DD,ok,phi=0.8455 z=4.1250 conv=true steps=71292,8.52
+one_factor,algorithm DD,ok,phi=0.8455 z=4.1250 conv=true steps=71292,8.45
 one_factor,seed 7,ok,phi=0.8351 z=4.0690 conv=true steps=3737,0.00
 physics,D2 Hookean none EqualMass Periodic,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-physics,D3 Hookean none EqualMass Periodic,ok,phi=0.6371 z=6.2951 conv=true steps=12091,0.78
-physics,D2 Hookean none EqualMass Walls,ok,phi=0.7690 z=4.1379 conv=true steps=7993,0.02
-physics,D3 Hookean none EqualMass Walls,ok,phi=0.5189 z=6.3390 conv=true steps=6833,0.53
+physics,D3 Hookean none EqualMass Periodic,ok,phi=0.6371 z=6.2951 conv=true steps=12256,0.78
 physics,D2 Hookean none EqualMass Walls,ok,phi=0.7690 z=4.1379 conv=true steps=7993,0.01
-physics,D3 Hookean none EqualMass Walls,ok,phi=0.5189 z=6.3390 conv=true steps=6833,0.03
-physics,D2 Hookean none Density Periodic,ok,phi=0.8310 z=4.0645 conv=true steps=6546,0.01
-physics,D3 Hookean none Density Periodic,ok,phi=0.6344 z=6.3279 conv=true steps=18149,0.06
-physics,D2 Hookean none Density Walls,ok,phi=0.7657 z=4.1333 conv=true steps=6246,0.01
-physics,D3 Hookean none Density Walls,ok,phi=0.5184 z=6.3279 conv=true steps=11569,0.05
-physics,D2 Hookean none Density Walls,ok,phi=0.7657 z=4.1333 conv=true steps=6246,0.01
-physics,D3 Hookean none Density Walls,ok,phi=0.5184 z=6.3279 conv=true steps=11569,0.05
-physics,D2 Hookean CundallStrack EqualMass Periodic,ok,phi=0.8184 z=3.5714 conv=true steps=3456,0.00
-physics,D3 Hookean CundallStrack EqualMass Periodic,ok,phi=0.5648 z=4.8136 conv=true steps=4141,0.48
-physics,D2 Hookean CundallStrack EqualMass Walls,ok,phi=0.7030 z=3.4483 conv=true steps=5063,0.45
-physics,D3 Hookean CundallStrack EqualMass Walls,ok,phi=0.4651 z=4.9455 conv=true steps=5952,0.52
-physics,D2 Hookean CundallStrack EqualMass Walls,ok,phi=0.7552 z=3.9200 conv=true steps=7132,0.01
-physics,D3 Hookean CundallStrack EqualMass Walls,ok,phi=0.4950 z=5.8621 conv=true steps=9806,0.05
-physics,D2 Hookean CundallStrack Density Periodic,ok,phi=0.8186 z=3.4074 conv=true steps=4586,0.01
-physics,D3 Hookean CundallStrack Density Periodic,ok,phi=0.5667 z=4.8852 conv=true steps=5344,0.02
-physics,D2 Hookean CundallStrack Density Walls,ok,phi=0.7026 z=3.4483 conv=true steps=5196,0.01
-physics,D3 Hookean CundallStrack Density Walls,ok,phi=0.4638 z=5.0345 conv=true steps=7151,0.03
-physics,D2 Hookean CundallStrack Density Walls,ok,phi=0.7552 z=3.9200 conv=true steps=7949,0.01
-physics,D3 Hookean CundallStrack Density Walls,ok,phi=0.4978 z=5.9636 conv=true steps=9826,0.05
-physics,D2 Hertzian none EqualMass Periodic,ok,phi=0.8466 z=4.2500 conv=true steps=5050,0.00
-physics,D3 Hertzian none EqualMass Periodic,ok,phi=0.6462 z=6.7937 conv=true steps=5045,0.46
-physics,D2 Hertzian none EqualMass Walls,ok,phi=0.7991 z=4.5000 conv=true steps=6617,0.44
-physics,D3 Hertzian none EqualMass Walls,ok,phi=0.5454 z=6.8065 conv=true steps=8303,0.55
-physics,D2 Hertzian none EqualMass Walls,ok,phi=0.7991 z=4.5000 conv=true steps=6617,0.01
-physics,D3 Hertzian none EqualMass Walls,ok,phi=0.5454 z=6.8065 conv=true steps=8303,0.03
-physics,D2 Hertzian none Density Periodic,ok,phi=0.8466 z=4.2500 conv=true steps=5324,0.00
-physics,D3 Hertzian none Density Periodic,ok,phi=0.6573 z=6.9841 conv=true steps=13572,0.05
-physics,D2 Hertzian none Density Walls,ok,phi=0.7842 z=4.5000 conv=true steps=6039,0.01
-physics,D3 Hertzian none Density Walls,ok,phi=0.5454 z=6.8065 conv=true steps=10170,0.05
-physics,D2 Hertzian none Density Walls,ok,phi=0.7842 z=4.5000 conv=true steps=6039,0.01
-physics,D3 Hertzian none Density Walls,ok,phi=0.5454 z=6.8065 conv=true steps=10170,0.04
-physics,D2 Hertzian CundallStrack EqualMass Periodic,ok,phi=0.8351 z=3.6667 conv=true steps=3942,0.43
-physics,D3 Hertzian CundallStrack EqualMass Periodic,ok,phi=0.5859 z=5.4286 conv=true steps=4148,0.49
-physics,D2 Hertzian CundallStrack EqualMass Walls,ok,phi=0.7236 z=3.7500 conv=true steps=4212,0.45
-physics,D3 Hertzian CundallStrack EqualMass Walls,ok,phi=0.4908 z=5.5238 conv=true steps=5627,0.52
-physics,D2 Hertzian CundallStrack EqualMass Walls,ok,phi=0.7686 z=4.1379 conv=true steps=4699,0.01
-physics,D3 Hertzian CundallStrack EqualMass Walls,ok,phi=0.5164 z=6.1587 conv=true steps=5269,0.03
-physics,D2 Hertzian CundallStrack Density Periodic,ok,phi=0.8351 z=3.6667 conv=true steps=4267,0.01
-physics,D3 Hertzian CundallStrack Density Periodic,ok,phi=0.5793 z=5.3871 conv=true steps=3287,0.01
-physics,D2 Hertzian CundallStrack Density Walls,ok,phi=0.7218 z=3.7500 conv=true steps=4119,0.01
-physics,D3 Hertzian CundallStrack Density Walls,ok,phi=0.4908 z=5.6190 conv=true steps=5579,0.03
-physics,D2 Hertzian CundallStrack Density Walls,ok,phi=0.7764 z=4.0000 conv=true steps=6055,0.01
-physics,D3 Hertzian CundallStrack Density Walls,ok,phi=0.5393 z=6.5625 conv=true steps=8344,0.04
-physics,D2 Hertzian Mindlin EqualMass Periodic,ok,phi=0.8319 z=3.8065 conv=true steps=5881,0.01
-physics,D3 Hertzian Mindlin EqualMass Periodic,ok,phi=0.5881 z=5.3115 conv=true steps=7890,0.50
-physics,D2 Hertzian Mindlin EqualMass Walls,ok,phi=0.7255 z=3.6875 conv=true steps=4340,0.45
-physics,D3 Hertzian Mindlin EqualMass Walls,ok,phi=0.4982 z=5.7419 conv=true steps=14532,0.58
-physics,D2 Hertzian Mindlin EqualMass Walls,ok,phi=0.7686 z=4.0741 conv=true steps=5497,0.01
-physics,D3 Hertzian Mindlin EqualMass Walls,ok,phi=0.5233 z=6.5397 conv=true steps=8913,0.05
-physics,D2 Hertzian Mindlin Density Periodic,ok,phi=0.8351 z=3.6667 conv=true steps=4991,0.01
-physics,D3 Hertzian Mindlin Density Periodic,ok,phi=0.5837 z=5.3333 conv=true steps=6013,0.02
-physics,D2 Hertzian Mindlin Density Walls,ok,phi=0.7255 z=3.6875 conv=true steps=5288,0.01
-physics,D3 Hertzian Mindlin Density Walls,ok,phi=0.4945 z=5.5410 conv=true steps=8893,0.04
-physics,D2 Hertzian Mindlin Density Walls,ok,phi=0.7754 z=4.0000 conv=true steps=6885,0.01
-physics,D3 Hertzian Mindlin Density Walls,ok,phi=0.5174 z=6.3125 conv=true steps=6558,0.03
+physics,D3 Hookean none EqualMass Walls,ok,phi=0.5189 z=6.3390 conv=true steps=6777,0.54
+physics,D2 Hookean none EqualMass Walls,ok,phi=0.7690 z=4.1379 conv=true steps=7993,0.01
+physics,D3 Hookean none EqualMass Walls,ok,phi=0.5189 z=6.3390 conv=true steps=6777,0.03
+physics,D2 Hookean none Density Periodic,ok,phi=0.8310 z=4.0645 conv=true steps=6460,0.01
+physics,D3 Hookean none Density Periodic,ok,phi=0.6256 z=6.2812 conv=true steps=16635,0.06
+physics,D2 Hookean none Density Walls,ok,phi=0.7657 z=4.1333 conv=true steps=6368,0.01
+physics,D3 Hookean none Density Walls,ok,phi=0.5194 z=6.3333 conv=true steps=13056,0.05
+physics,D2 Hookean none Density Walls,ok,phi=0.7657 z=4.1333 conv=true steps=6368,0.01
+physics,D3 Hookean none Density Walls,ok,phi=0.5194 z=6.3333 conv=true steps=13056,0.05
+physics,D2 Hookean CundallStrack EqualMass Periodic,ok,phi=0.8107 z=3.4286 conv=true steps=4545,0.01
+physics,D3 Hookean CundallStrack EqualMass Periodic,ok,phi=0.5777 z=4.9492 conv=true steps=4811,0.49
+physics,D2 Hookean CundallStrack EqualMass Walls,ok,phi=0.7021 z=3.4000 conv=true steps=4938,0.44
+physics,D3 Hookean CundallStrack EqualMass Walls,ok,phi=0.4762 z=5.2000 conv=true steps=10293,0.56
+physics,D2 Hookean CundallStrack EqualMass Walls,ok,phi=0.7552 z=3.7600 conv=true steps=6107,0.01
+physics,D3 Hookean CundallStrack EqualMass Walls,ok,phi=0.4894 z=5.8000 conv=true steps=7485,0.05
+physics,D2 Hookean CundallStrack Density Periodic,ok,phi=0.8166 z=3.4167 conv=true steps=5891,0.01
+physics,D3 Hookean CundallStrack Density Periodic,ok,phi=0.5873 z=4.9259 conv=true steps=5844,0.02
+physics,D2 Hookean CundallStrack Density Walls,ok,phi=0.7023 z=3.5333 conv=true steps=4870,0.06
+physics,D3 Hookean CundallStrack Density Walls,ok,phi=0.4638 z=4.9167 conv=true steps=28570,0.14
+physics,D2 Hookean CundallStrack Density Walls,ok,phi=0.7500 z=3.8519 conv=true steps=6397,0.01
+physics,D3 Hookean CundallStrack Density Walls,ok,phi=0.5063 z=6.0000 conv=true steps=8543,0.04
+physics,D2 Hertzian none EqualMass Periodic,ok,phi=0.8466 z=4.2500 conv=true steps=5050,0.01
+physics,D3 Hertzian none EqualMass Periodic,ok,phi=0.6462 z=6.7937 conv=true steps=5045,0.48
+physics,D2 Hertzian none EqualMass Walls,ok,phi=0.7991 z=4.5000 conv=true steps=6591,0.43
+physics,D3 Hertzian none EqualMass Walls,ok,phi=0.5454 z=6.8065 conv=true steps=8304,0.51
+physics,D2 Hertzian none EqualMass Walls,ok,phi=0.7991 z=4.5000 conv=true steps=6591,0.01
+physics,D3 Hertzian none EqualMass Walls,ok,phi=0.5454 z=6.8065 conv=true steps=8304,0.03
+physics,D2 Hertzian none Density Periodic,ok,phi=0.8466 z=4.2500 conv=true steps=6496,0.01
+physics,D3 Hertzian none Density Periodic,ok,phi=0.6623 z=7.0000 conv=true steps=12252,0.05
+physics,D2 Hertzian none Density Walls,ok,phi=0.7842 z=4.5000 conv=true steps=5618,0.01
+physics,D3 Hertzian none Density Walls,ok,phi=0.5434 z=6.7742 conv=true steps=13976,0.06
+physics,D2 Hertzian none Density Walls,ok,phi=0.7842 z=4.5000 conv=true steps=5618,0.01
+physics,D3 Hertzian none Density Walls,ok,phi=0.5434 z=6.7742 conv=true steps=13976,0.06
+physics,D2 Hertzian CundallStrack EqualMass Periodic,ok,phi=0.8246 z=3.7333 conv=true steps=4387,0.42
+physics,D3 Hertzian CundallStrack EqualMass Periodic,ok,phi=0.5970 z=5.4333 conv=true steps=5175,0.50
+physics,D2 Hertzian CundallStrack EqualMass Walls,ok,phi=0.7227 z=3.6774 conv=true steps=4206,0.44
+physics,D3 Hertzian CundallStrack EqualMass Walls,ok,phi=0.4871 z=5.6825 conv=true steps=3715,0.52
+physics,D2 Hertzian CundallStrack EqualMass Walls,ok,phi=0.7764 z=4.0690 conv=true steps=5218,0.01
+physics,D3 Hertzian CundallStrack EqualMass Walls,ok,phi=0.5155 z=6.4444 conv=true steps=4438,0.03
+physics,D2 Hertzian CundallStrack Density Periodic,ok,phi=0.8329 z=3.7333 conv=true steps=4806,0.01
+physics,D3 Hertzian CundallStrack Density Periodic,ok,phi=0.6061 z=5.6452 conv=true steps=6969,0.03
+physics,D2 Hertzian CundallStrack Density Walls,ok,phi=0.7255 z=3.7333 conv=true steps=4114,0.01
+physics,D3 Hertzian CundallStrack Density Walls,ok,phi=0.4890 z=5.3548 conv=true steps=5240,0.03
+physics,D2 Hertzian CundallStrack Density Walls,ok,phi=0.7638 z=3.8667 conv=true steps=7721,0.01
+physics,D3 Hertzian CundallStrack Density Walls,ok,phi=0.5332 z=6.3871 conv=true steps=7027,0.03
+physics,D2 Hertzian Mindlin EqualMass Periodic,ok,phi=0.8236 z=3.7333 conv=true steps=6018,0.01
+physics,D3 Hertzian Mindlin EqualMass Periodic,ok,phi=0.6039 z=5.4194 conv=true steps=17351,0.55
+physics,D2 Hertzian Mindlin EqualMass Walls,ok,phi=0.7255 z=3.6875 conv=true steps=4991,0.44
+physics,D3 Hertzian Mindlin EqualMass Walls,ok,phi=0.4890 z=5.6508 conv=true steps=12213,0.57
+physics,D2 Hertzian Mindlin EqualMass Walls,ok,phi=0.7754 z=4.0690 conv=true steps=6557,0.01
+physics,D3 Hertzian Mindlin EqualMass Walls,ok,phi=0.5155 z=6.2857 conv=true steps=9180,0.04
+physics,D2 Hertzian Mindlin Density Periodic,ok,phi=0.8361 z=3.8065 conv=true steps=5439,0.01
+physics,D3 Hertzian Mindlin Density Periodic,ok,phi=0.6039 z=5.4839 conv=true steps=9672,0.04
+physics,D2 Hertzian Mindlin Density Walls,ok,phi=0.7255 z=3.6000 conv=true steps=4989,0.01
+physics,D3 Hertzian Mindlin Density Walls,ok,phi=0.4871 z=5.3968 conv=true steps=9755,0.05
+physics,D2 Hertzian Mindlin Density Walls,ok,phi=0.7600 z=4.0667 conv=true steps=6410,0.01
+physics,D3 Hertzian Mindlin Density Walls,ok,phi=0.5353 z=6.2951 conv=true steps=12161,0.06
 algorithm,FIRE damping=none drag=none friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-algorithm,FIRE damping=none drag=none friction=on,ok,phi=0.8184 z=3.5714 conv=true steps=3456,0.00
-algorithm,FIRE damping=none drag=always friction=off,ok,phi=0.8308 z=3.9333 conv=false steps=60000,0.06
-algorithm,FIRE damping=none drag=always friction=on,ok,phi=0.8102 z=3.4286 conv=false steps=60000,0.07
-algorithm,FIRE damping=none drag=compression friction=off,ok,phi=0.8308 z=3.9333 conv=false steps=60000,0.05
-algorithm,FIRE damping=none drag=compression friction=on,ok,phi=0.8102 z=3.4286 conv=false steps=60000,0.07
-algorithm,FIRE damping=ContactDamping drag=none friction=off,ok,phi=0.8184 z=3.6296 conv=false steps=60000,0.08
-algorithm,FIRE damping=ContactDamping drag=none friction=on,ok,phi=0.8022 z=0.0000 conv=false steps=60000,0.11
-algorithm,FIRE damping=ContactDamping drag=always friction=off,ok,phi=0.7862 z=0.0000 conv=false steps=60000,0.06
-algorithm,FIRE damping=ContactDamping drag=always friction=on,ok,phi=0.7552 z=0.0000 conv=false steps=60000,0.07
-algorithm,FIRE damping=ContactDamping drag=compression friction=off,ok,phi=0.7862 z=0.0000 conv=false steps=60000,0.06
-algorithm,FIRE damping=ContactDamping drag=compression friction=on,ok,phi=0.7552 z=0.0000 conv=false steps=60000,0.07
-algorithm,FIRE damping=ViscousRate drag=none friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=16061,0.03
-algorithm,FIRE damping=ViscousRate drag=none friction=on,ok,phi=0.8207 z=3.4815 conv=true steps=32779,0.06
-algorithm,FIRE damping=ViscousRate drag=always friction=off,ok,phi=0.8184 z=3.6296 conv=false steps=60000,0.06
-algorithm,FIRE damping=ViscousRate drag=always friction=on,ok,phi=0.8022 z=3.0833 conv=false steps=60000,0.08
-algorithm,FIRE damping=ViscousRate drag=compression friction=off,ok,phi=0.8184 z=3.6296 conv=false steps=60000,0.06
-algorithm,FIRE damping=ViscousRate drag=compression friction=on,ok,phi=0.8022 z=3.0833 conv=false steps=60000,0.08
-algorithm,FIRE damping=RelativeVelocityDamping drag=none friction=off,ok,phi=0.8440 z=4.1250 conv=true steps=21969,0.03
-algorithm,FIRE damping=RelativeVelocityDamping drag=none friction=on,ok,phi=0.8202 z=3.5000 conv=true steps=18875,0.03
-algorithm,FIRE damping=RelativeVelocityDamping drag=always friction=off,ok,phi=0.8184 z=3.7037 conv=false steps=60000,0.06
-algorithm,FIRE damping=RelativeVelocityDamping drag=always friction=on,ok,phi=0.8022 z=3.1667 conv=false steps=60000,0.07
-algorithm,FIRE damping=RelativeVelocityDamping drag=compression friction=off,ok,phi=0.8184 z=3.7037 conv=false steps=60000,0.05
-algorithm,FIRE damping=RelativeVelocityDamping drag=compression friction=on,ok,phi=0.8022 z=3.1667 conv=false steps=60000,0.07
+algorithm,FIRE damping=none drag=none friction=on,ok,phi=0.8107 z=3.4286 conv=true steps=4545,0.01
+algorithm,FIRE damping=none drag=always friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=50380,0.12
+algorithm,FIRE damping=none drag=always friction=on,ok,phi=0.8107 z=3.4483 conv=true steps=57331,0.08
+algorithm,FIRE damping=none drag=compression friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=50381,0.06
+algorithm,FIRE damping=none drag=compression friction=on,ok,phi=0.8107 z=3.4483 conv=true steps=57332,0.08
+algorithm,FIRE damping=ContactDamping drag=none friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=27091,0.04
+algorithm,FIRE damping=ContactDamping drag=none friction=on,ok,phi=0.8115 z=3.5172 conv=true steps=48986,0.11
+algorithm,FIRE damping=ContactDamping drag=always friction=off,ok,phi=0.8308 z=3.9333 conv=false steps=60000,0.09
+algorithm,FIRE damping=ContactDamping drag=always friction=on,ok,phi=0.8184 z=3.4074 conv=false steps=60000,0.11
+algorithm,FIRE damping=ContactDamping drag=compression friction=off,ok,phi=0.8308 z=3.9333 conv=false steps=60000,0.09
+algorithm,FIRE damping=ContactDamping drag=compression friction=on,ok,phi=0.8184 z=3.4074 conv=false steps=60000,0.11
+algorithm,FIRE damping=ViscousRate drag=none friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=6631,0.02
+algorithm,FIRE damping=ViscousRate drag=none friction=on,ok,phi=0.8112 z=3.5862 conv=true steps=14774,0.04
+algorithm,FIRE damping=ViscousRate drag=always friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=50709,0.07
+algorithm,FIRE damping=ViscousRate drag=always friction=on,ok,phi=0.8112 z=3.3333 conv=true steps=56874,0.09
+algorithm,FIRE damping=ViscousRate drag=compression friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=50710,0.06
+algorithm,FIRE damping=ViscousRate drag=compression friction=on,ok,phi=0.8112 z=3.3333 conv=true steps=56875,0.09
+algorithm,FIRE damping=RelativeVelocityDamping drag=none friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=23739,0.04
+algorithm,FIRE damping=RelativeVelocityDamping drag=none friction=on,ok,phi=0.8187 z=3.3846 conv=true steps=29633,0.05
+algorithm,FIRE damping=RelativeVelocityDamping drag=always friction=off,ok,phi=0.8308 z=3.8667 conv=false steps=60000,0.08
+algorithm,FIRE damping=RelativeVelocityDamping drag=always friction=on,ok,phi=0.8102 z=3.0435 conv=false steps=60000,0.09
+algorithm,FIRE damping=RelativeVelocityDamping drag=compression friction=off,ok,phi=0.8308 z=3.8667 conv=false steps=60000,0.07
+algorithm,FIRE damping=RelativeVelocityDamping drag=compression friction=on,ok,phi=0.8102 z=3.0435 conv=false steps=60000,0.09
 algorithm,DD-centered damping=none drag=none friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,0.05
-algorithm,DD-centered damping=none drag=none friction=on,ok,phi=0.8520 z=3.8667 conv=false steps=60000,0.13
-algorithm,DD-centered damping=none drag=always friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.61
-algorithm,DD-centered damping=none drag=always friction=on,ok,phi=0.7862 z=2.8571 conv=false steps=60000,0.61
-algorithm,DD-centered damping=none drag=compression friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.65
-algorithm,DD-centered damping=none drag=compression friction=on,ok,phi=0.7862 z=2.8571 conv=false steps=60000,0.59
-algorithm,DD-centered damping=ContactDamping drag=none friction=off,ok,phi=0.8456 z=4.1250 conv=false steps=60000,6.99
-algorithm,DD-centered damping=ContactDamping drag=none friction=on,ok,phi=0.8236 z=3.5000 conv=true steps=34339,3.58
-algorithm,DD-centered damping=ContactDamping drag=always friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,4.26
-algorithm,DD-centered damping=ContactDamping drag=always friction=on,ok,phi=0.7402 z=0.0000 conv=false steps=60000,4.85
-algorithm,DD-centered damping=ContactDamping drag=compression friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,4.31
-algorithm,DD-centered damping=ContactDamping drag=compression friction=on,ok,phi=0.7402 z=0.0000 conv=false steps=60000,4.83
-algorithm,DD-centered damping=ViscousRate drag=none friction=off,ok,phi=0.8520 z=4.1875 conv=false steps=60000,5.89
-algorithm,DD-centered damping=ViscousRate drag=none friction=on,ok,phi=0.8298 z=3.7931 conv=true steps=33859,4.88
-algorithm,DD-centered damping=ViscousRate drag=always friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,5.77
-algorithm,DD-centered damping=ViscousRate drag=always friction=on,ok,phi=0.7705 z=2.9167 conv=false steps=60000,6.06
-algorithm,DD-centered damping=ViscousRate drag=compression friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,5.76
-algorithm,DD-centered damping=ViscousRate drag=compression friction=on,ok,phi=0.7705 z=2.9167 conv=false steps=60000,6.11
-algorithm,DD-centered damping=RelativeVelocityDamping drag=none friction=off,ok,phi=0.8435 z=3.7241 conv=false steps=60000,9.36
-algorithm,DD-centered damping=RelativeVelocityDamping drag=none friction=on,ok,phi=0.8205 z=3.3846 conv=false steps=60000,7.11
-algorithm,DD-centered damping=RelativeVelocityDamping drag=always friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,7.16
-algorithm,DD-centered damping=RelativeVelocityDamping drag=always friction=on,ok,phi=0.7552 z=0.0000 conv=false steps=60000,5.34
-algorithm,DD-centered damping=RelativeVelocityDamping drag=compression friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,7.14
-algorithm,DD-centered damping=RelativeVelocityDamping drag=compression friction=on,ok,phi=0.7552 z=0.0000 conv=false steps=60000,5.41
+algorithm,DD-centered damping=none drag=none friction=on,ok,phi=0.8520 z=3.8667 conv=false steps=60000,0.12
+algorithm,DD-centered damping=none drag=always friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.60
+algorithm,DD-centered damping=none drag=always friction=on,ok,phi=0.7862 z=2.8571 conv=false steps=60000,0.60
+algorithm,DD-centered damping=none drag=compression friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.57
+algorithm,DD-centered damping=none drag=compression friction=on,ok,phi=0.7862 z=2.8571 conv=false steps=60000,0.58
+algorithm,DD-centered damping=ContactDamping drag=none friction=off,ok,phi=0.8456 z=4.1250 conv=false steps=60000,6.84
+algorithm,DD-centered damping=ContactDamping drag=none friction=on,ok,phi=0.8236 z=3.5000 conv=true steps=34339,3.55
+algorithm,DD-centered damping=ContactDamping drag=always friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,4.23
+algorithm,DD-centered damping=ContactDamping drag=always friction=on,ok,phi=0.7402 z=0.0000 conv=false steps=60000,4.75
+algorithm,DD-centered damping=ContactDamping drag=compression friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,4.16
+algorithm,DD-centered damping=ContactDamping drag=compression friction=on,ok,phi=0.7402 z=0.0000 conv=false steps=60000,4.74
+algorithm,DD-centered damping=ViscousRate drag=none friction=off,ok,phi=0.8520 z=4.1875 conv=false steps=60000,5.67
+algorithm,DD-centered damping=ViscousRate drag=none friction=on,ok,phi=0.8298 z=3.7931 conv=true steps=33859,4.73
+algorithm,DD-centered damping=ViscousRate drag=always friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,5.69
+algorithm,DD-centered damping=ViscousRate drag=always friction=on,ok,phi=0.7705 z=2.9167 conv=false steps=60000,5.84
+algorithm,DD-centered damping=ViscousRate drag=compression friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,5.65
+algorithm,DD-centered damping=ViscousRate drag=compression friction=on,ok,phi=0.7705 z=2.9167 conv=false steps=60000,5.83
+algorithm,DD-centered damping=RelativeVelocityDamping drag=none friction=off,ok,phi=0.8435 z=3.7241 conv=false steps=60000,9.23
+algorithm,DD-centered damping=RelativeVelocityDamping drag=none friction=on,ok,phi=0.8205 z=3.3846 conv=false steps=60000,7.04
+algorithm,DD-centered damping=RelativeVelocityDamping drag=always friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,7.15
+algorithm,DD-centered damping=RelativeVelocityDamping drag=always friction=on,ok,phi=0.7552 z=0.0000 conv=false steps=60000,5.33
+algorithm,DD-centered damping=RelativeVelocityDamping drag=compression friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,7.02
+algorithm,DD-centered damping=RelativeVelocityDamping drag=compression friction=on,ok,phi=0.7552 z=0.0000 conv=false steps=60000,5.28
 algorithm,DD-lagged damping=none drag=none friction=off,ok,phi=0.8184 z=0.0000 conv=false steps=60000,0.04
 algorithm,DD-lagged damping=none drag=none friction=on,ok,phi=0.8351 z=4.1333 conv=false steps=60000,0.08
 algorithm,DD-lagged damping=none drag=always friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.06
@@ -162,23 +162,23 @@ algorithm,DD-lagged damping=ViscousRate drag=always friction=on,ok,phi=0.7705 z=
 algorithm,DD-lagged damping=ViscousRate drag=compression friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.07
 algorithm,DD-lagged damping=ViscousRate drag=compression friction=on,ok,phi=0.7705 z=2.9167 conv=false steps=60000,0.07
 algorithm,DD-lagged damping=RelativeVelocityDamping drag=none friction=off,ok,phi=0.8435 z=3.8065 conv=false steps=60000,0.06
-algorithm,DD-lagged damping=RelativeVelocityDamping drag=none friction=on,ok,phi=0.8102 z=3.7143 conv=false steps=60000,0.08
+algorithm,DD-lagged damping=RelativeVelocityDamping drag=none friction=on,ok,phi=0.8102 z=3.7143 conv=false steps=60000,0.09
 algorithm,DD-lagged damping=RelativeVelocityDamping drag=always friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,0.06
 algorithm,DD-lagged damping=RelativeVelocityDamping drag=always friction=on,ok,phi=0.7552 z=0.0000 conv=false steps=60000,0.06
 algorithm,DD-lagged damping=RelativeVelocityDamping drag=compression friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,0.06
 algorithm,DD-lagged damping=RelativeVelocityDamping drag=compression friction=on,ok,phi=0.7552 z=0.0000 conv=false steps=60000,0.06
 algorithm,DD-euler damping=none drag=none friction=off,ok,phi=0.8184 z=0.0000 conv=false steps=60000,0.04
 algorithm,DD-euler damping=none drag=none friction=on,ok,phi=0.8351 z=3.8621 conv=false steps=60000,0.07
-algorithm,DD-euler damping=none drag=always friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.06
+algorithm,DD-euler damping=none drag=always friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.05
 algorithm,DD-euler damping=none drag=always friction=on,ok,phi=0.7862 z=2.8571 conv=false steps=60000,0.06
 algorithm,DD-euler damping=none drag=compression friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.05
 algorithm,DD-euler damping=none drag=compression friction=on,ok,phi=0.7862 z=2.8571 conv=false steps=60000,0.06
-algorithm,DD-euler damping=ContactDamping drag=none friction=off,ok,phi=0.8298 z=4.0000 conv=true steps=52407,0.07
+algorithm,DD-euler damping=ContactDamping drag=none friction=off,ok,phi=0.8298 z=4.0000 conv=true steps=52407,0.06
 algorithm,DD-euler damping=ContactDamping drag=none friction=on,ok,phi=0.8190 z=3.4286 conv=true steps=23856,0.03
 algorithm,DD-euler damping=ContactDamping drag=always friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,0.06
-algorithm,DD-euler damping=ContactDamping drag=always friction=on,ok,phi=0.7255 z=0.0000 conv=false steps=60000,0.07
+algorithm,DD-euler damping=ContactDamping drag=always friction=on,ok,phi=0.7255 z=0.0000 conv=false steps=60000,0.06
 algorithm,DD-euler damping=ContactDamping drag=compression friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,0.06
-algorithm,DD-euler damping=ContactDamping drag=compression friction=on,ok,phi=0.7255 z=0.0000 conv=false steps=60000,0.07
+algorithm,DD-euler damping=ContactDamping drag=compression friction=on,ok,phi=0.7255 z=0.0000 conv=false steps=60000,0.06
 algorithm,DD-euler damping=ViscousRate drag=none friction=off,ok,phi=0.8308 z=3.7931 conv=false steps=60000,0.06
 algorithm,DD-euler damping=ViscousRate drag=none friction=on,ok,phi=0.8187 z=3.3571 conv=true steps=49450,0.06
 algorithm,DD-euler damping=ViscousRate drag=always friction=off,ok,phi=0.8184 z=3.8667 conv=false steps=60000,0.06
@@ -192,40 +192,40 @@ algorithm,DD-euler damping=RelativeVelocityDamping drag=always friction=on,ok,ph
 algorithm,DD-euler damping=RelativeVelocityDamping drag=compression friction=off,ok,phi=0.8022 z=0.0000 conv=false steps=60000,0.05
 algorithm,DD-euler damping=RelativeVelocityDamping drag=compression friction=on,ok,phi=0.7552 z=0.0000 conv=false steps=60000,0.06
 convergence,RelativeForce FIRE,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-convergence,RelativeForce DD-centered,ok,phi=0.8455 z=4.1250 conv=true steps=71292,8.74
+convergence,RelativeForce DD-centered,ok,phi=0.8455 z=4.1250 conv=true steps=71292,8.65
 convergence,RelativeForce DD-lagged,ok,phi=0.8298 z=4.0000 conv=true steps=55361,0.07
-convergence,RelativeForce DD-euler,ok,phi=0.8298 z=4.0000 conv=true steps=52407,0.07
+convergence,RelativeForce DD-euler,ok,phi=0.8298 z=4.0000 conv=true steps=52407,0.06
 convergence,LeidenAcceleration FIRE,ok,phi=0.8310 z=4.0645 conv=true steps=8593,0.01
-convergence,LeidenAcceleration DD-centered,ok,phi=0.8477 z=4.1250 conv=false steps=80000,10.19
+convergence,LeidenAcceleration DD-centered,ok,phi=0.8477 z=4.1250 conv=false steps=80000,9.87
 convergence,LeidenAcceleration DD-lagged,ok,phi=0.8350 z=4.1290 conv=false steps=80000,0.12
 convergence,LeidenAcceleration DD-euler,ok,phi=0.8350 z=4.1290 conv=false steps=80000,0.11
-convergence,KineticEnergy FIRE,ok,phi=0.8310 z=4.0645 conv=true steps=9107,0.01
+convergence,KineticEnergy FIRE,ok,phi=0.8310 z=4.0645 conv=true steps=9111,0.01
 convergence,KineticEnergy DD-centered,ok,phi=0.2764 z=0.0000 conv=false steps=80000,0.11
 convergence,KineticEnergy DD-lagged,ok,phi=0.2709 z=0.0000 conv=false steps=80000,0.04
 convergence,KineticEnergy DD-euler,ok,phi=0.2709 z=0.0000 conv=false steps=80000,0.04
-convergence,RestartTest FIRE,ok,phi=0.8310 z=4.0645 conv=true steps=11020,0.01
-convergence,RestartTest DD-centered,ok,phi=0.8477 z=4.1250 conv=false steps=80000,10.09
+convergence,RestartTest FIRE,ok,phi=0.8310 z=4.0645 conv=true steps=11023,0.01
+convergence,RestartTest DD-centered,ok,phi=0.8477 z=4.1250 conv=false steps=80000,9.92
 convergence,RestartTest DD-lagged,ok,phi=0.8267 z=0.0000 conv=false steps=80000,0.12
-convergence,RestartTest DD-euler,ok,phi=0.8350 z=4.1290 conv=false steps=80000,0.12
+convergence,RestartTest DD-euler,ok,phi=0.8350 z=4.1290 conv=false steps=80000,0.11
 convergence,custom FIRE,ok,phi=0.2551 z=0.0000 conv=false steps=2001,0.00
 convergence,custom DD-centered,ok,phi=0.2907 z=0.0000 conv=true steps=10008,0.01
 convergence,custom DD-lagged,ok,phi=0.2907 z=0.0000 conv=true steps=10008,0.00
 convergence,custom DD-euler,ok,phi=0.2907 z=0.0000 conv=true steps=10008,0.00
 rattlers,ContactCount friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-rattlers,ContactCount friction=on,ok,phi=0.8184 z=3.5714 conv=true steps=3456,0.00
+rattlers,ContactCount friction=on,ok,phi=0.8107 z=3.4286 conv=true steps=4545,0.01
 rattlers,ContactCount friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-rattlers,ContactCount friction=on,ok,phi=0.8184 z=3.6000 conv=true steps=3456,0.00
+rattlers,ContactCount friction=on,ok,phi=0.8107 z=3.4483 conv=true steps=4545,0.01
 rattlers,TwoContact friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-rattlers,TwoContact friction=on,ok,phi=0.8184 z=3.5385 conv=true steps=3456,0.01
+rattlers,TwoContact friction=on,ok,phi=0.8107 z=3.4074 conv=true steps=4545,0.01
 rattlers,ForceFloor friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-rattlers,ForceFloor friction=on,ok,phi=0.8184 z=3.5714 conv=true steps=3456,0.01
+rattlers,ForceFloor friction=on,ok,phi=0.8107 z=3.4286 conv=true steps=4545,0.01
 rattlers,Unresolved friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-rattlers,Unresolved friction=on,ok,phi=0.8184 z=3.5714 conv=true steps=3456,0.01
+rattlers,Unresolved friction=on,ok,phi=0.8107 z=3.4286 conv=true steps=4545,0.01
 output,format=hdf5 compression=nothing rattlers_file=false overwrite=false,ok,,0.00
 output,format=hdf5 compression=nothing rattlers_file=false overwrite=true,ok,,0.00
 output,format=hdf5 compression=nothing rattlers_file=true overwrite=false,ok,,0.00
 output,format=hdf5 compression=nothing rattlers_file=true overwrite=true,ok,,0.00
-output,format=hdf5 compression=gzip rattlers_file=false overwrite=false,ok,,0.48
+output,format=hdf5 compression=gzip rattlers_file=false overwrite=false,ok,,0.47
 output,format=hdf5 compression=gzip rattlers_file=false overwrite=true,ok,,0.00
 output,format=hdf5 compression=gzip rattlers_file=true overwrite=false,ok,,0.00
 output,format=hdf5 compression=gzip rattlers_file=true overwrite=true,ok,,0.01
@@ -242,19 +242,19 @@ output,format=csv compression=nothing rattlers_file=false overwrite=true,ok,,0.0
 output,format=csv compression=nothing rattlers_file=true overwrite=false,ok,,0.00
 output,format=csv compression=nothing rattlers_file=true overwrite=true,ok,,0.00
 recording,restart_file,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.02
-recording,snapshots,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.01
-recording,movie,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.03
+recording,snapshots,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.02
+recording,movie,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.12
 recording,all three,ok,phi=0.8310 z=4.0645 conv=true steps=6484,0.04
-recording,restart_packing continuation,ok,phi=0.8310 z=4.0645 conv=true steps=6484,1.03
+recording,restart_packing continuation,ok,phi=0.8310 z=4.0645 conv=true steps=6484,1.04
 recording,restart rejects a physics change,refused,ArgumentError: a restart may change only steps_max; failure_action; convergence; restart_file; snapshots; movie; pressure_tolerance; not :friction (design §6),0.05
-restart,continue FIRE Periodic friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=6487,0.54
-restart,continue DampedDynamics Periodic friction=off,ok,phi=0.8455 z=4.1250 conv=true steps=71333,15.34
-restart,continue FIRE Walls friction=off,ok,phi=0.7690 z=4.1379 conv=true steps=8000,0.84
-restart,continue DampedDynamics Walls friction=off,ok,phi=0.7786 z=4.0714 conv=true steps=99297,19.08
-restart,continue FIRE Periodic friction=on,ok,phi=0.8184 z=3.5714 conv=true steps=3490,0.43
-restart,continue DampedDynamics Periodic friction=on,ok,phi=0.8362 z=3.5714 conv=true steps=38209,7.75
-restart,continue FIRE Walls friction=on,ok,phi=0.7030 z=3.4483 conv=true steps=5076,0.61
-restart,continue DampedDynamics Walls friction=on,ok,phi=0.7245 z=3.5000 conv=true steps=40918,7.79
+restart,continue FIRE Periodic friction=off,ok,phi=0.8310 z=4.0645 conv=true steps=6487,0.52
+restart,continue DampedDynamics Periodic friction=off,ok,phi=0.8455 z=4.1250 conv=true steps=71333,15.22
+restart,continue FIRE Walls friction=off,ok,phi=0.7690 z=4.1379 conv=true steps=8000,0.87
+restart,continue DampedDynamics Walls friction=off,ok,phi=0.7786 z=4.0714 conv=true steps=99297,18.96
+restart,continue FIRE Periodic friction=on,ok,phi=0.8107 z=3.4286 conv=true steps=4449,0.50
+restart,continue DampedDynamics Periodic friction=on,ok,phi=0.8362 z=3.5714 conv=true steps=38209,7.64
+restart,continue FIRE Walls friction=on,ok,phi=0.7017 z=3.4000 conv=true steps=4800,0.54
+restart,continue DampedDynamics Walls friction=on,ok,phi=0.7245 z=3.5000 conv=true steps=40918,7.80
 refusal,dimension 4,refused,ArgumentError: dimension must be 2 or 3; got 4,0.00
 refusal,one particle,refused,ArgumentError: particles_count must be at least 2; got 1,0.00
 refusal,Mindlin with Hookean,refused,ArgumentError: Mindlin friction needs Hertzian contacts (design §13),0.00

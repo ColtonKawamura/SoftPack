@@ -225,8 +225,17 @@ end
 The `RelativeForce` test at its default tolerance, then once on the final packing zero the
 velocities and check that the kinetic energy and the unbalanced forces do not grow back
 (design §5). It is the check for saddles.
+
+`watch` is the number of steps the check relaxes for, `growth` is the factor by which the
+unbalanced force may rise, and `energy_tolerance` is the kinetic-energy scale (card T-2brz:
+the design fixes the check but not its length or thresholds, so they are keywords with the
+values the first implementation hard-coded).
 """
-struct RestartTest <: ConvergenceTest end
+Base.@kwdef struct RestartTest <: ConvergenceTest
+    watch::Int = 2000
+    growth::Float64 = 2.0
+    energy_tolerance::Float64 = 1e-8
+end
 
 # --- Algorithms (§7, §8, §14) -----------------------------------------------
 
@@ -236,14 +245,17 @@ abstract type Algorithm end
     FIRE(; timestep_max = 10, timestep_min = 0.02, delay = 20, timestep_grow = 1.1,
            timestep_shrink = 0.5, mixing_coefficient = 0.25, mixing_shrink = 0.99,
            uphill_max = 2000, inertia_correction = true, delay_initial = true,
-           integrator = :semi_implicit_euler, damping = nothing, drag = nothing)
+           integrator = :semi_implicit_euler, displacement_max = 0.1,
+           damping = nothing, drag = nothing)
 
 FIRE 2.0 with the LAMMPS `min_style fire` defaults (design §14). `timestep_max` and
 `timestep_min` are multiples of the starting step. The step rules follow Algorithm 2 of
 the wiki's FIRE settings page, which matches LAMMPS `min_fire.cpp` (card T-vcne,
 option 1). With friction FIRE also integrates the spins; the design allows the
 combination and records it as non-standard (§7). `damping` and `drag` are accepted but off
-by default, since FIRE's own velocity rules remove energy.
+by default, since FIRE's own velocity rules remove energy. `displacement_max` caps how far
+a particle may move in one step, in units of the reference diameter (card T-3qkf); the cap
+only bites in a violent step, and 0.1 is the LAMMPS `dmin` default.
 """
 Base.@kwdef struct FIRE <: Algorithm
     timestep_max::Float64 = 10.0
@@ -257,6 +269,7 @@ Base.@kwdef struct FIRE <: Algorithm
     inertia_correction::Bool = true
     delay_initial::Bool = true
     integrator::Symbol = :semi_implicit_euler
+    displacement_max::Float64 = 0.1
     damping::Any = nothing
     drag::Any = nothing
 end
@@ -594,6 +607,12 @@ end
 function validate_convergence(test)
     (test isa RelativeForce || test isa LeidenAcceleration || test isa KineticEnergy ||
      test isa RestartTest || test isa Function) || not_implemented("convergence", test)
+    if test isa RestartTest
+        test.watch >= 1 || throw(ArgumentError("RestartTest watch must be at least 1"))
+        test.growth >= 1 || throw(ArgumentError("RestartTest growth must be at least 1"))
+        test.energy_tolerance > 0 ||
+            throw(ArgumentError("RestartTest energy_tolerance must be positive"))
+    end
     hasproperty(test, :tolerance) && test.tolerance <= 0 &&
         throw(ArgumentError("tolerance must be positive"))
     return test
@@ -615,6 +634,8 @@ function validate_algorithm(algorithm)
             throw(ArgumentError("FIRE delay must be non-negative"))
         algorithm.uphill_max >= 1 ||
             throw(ArgumentError("FIRE uphill_max must be at least 1"))
+        algorithm.displacement_max > 0 ||
+            throw(ArgumentError("FIRE displacement_max must be positive"))
         validate_damping(algorithm.damping)
         validate_drag(algorithm.drag)
         return algorithm
